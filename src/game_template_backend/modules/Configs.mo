@@ -29,13 +29,14 @@ import Time "mo:base/Time";
 import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
-import JSON "./utils/Json";
-import Utils "./utils/Utils";
+import JSON "../utils/Json";
+import Utils "../utils/Utils";
 
 module {
-    public class Configs(remote_configs : Trie.Trie<Text, JSON.JSON>) {
+    public class Configs(_configs : Trie.Trie<Text, JSON.JSON>) {
+        public var remote_configs : Trie.Trie<Text, JSON.JSON> = _configs;
         //CRUD
-        public shared ({ caller }) func create_config(name : Text, json : Text) : async (Result.Result<Text, Text>) {
+        public func create_config(name : Text, json : Text) : async (Result.Result<Text, Text>) {
             switch (JSON.parse(json)) {
                 case (?j) {
                     remote_configs := Trie.put(remote_configs, Utils.keyT(name), Text.equal, j).0;
@@ -47,18 +48,7 @@ module {
             };
         };
 
-        public query func get_config(name : Text) : async (Text) {
-            switch (Trie.find(remote_configs, Utils.keyT(name), Text.equal)) {
-                case (?j) {
-                    return JSON.show(j);
-                };
-                case _ {
-                    return "json not found";
-                };
-            };
-        };
-
-        public shared ({ caller }) func update_config(name : Text, json : Text) : async (Result.Result<Text, Text>) {
+        public func update_config(name : Text, json : Text) : async (Result.Result<Text, Text>) {
             switch (Trie.find(remote_configs, Utils.keyT(name), Text.equal)) {
                 case (?_) {
                     switch (JSON.parse(json)) {
@@ -79,7 +69,18 @@ module {
             };
         };
 
-        public shared ({ caller }) func delete_config(name : Text) : async (Result.Result<Text, Text>) {
+        public func get_config(name : Text) : async (Text) {
+            switch (Trie.find(remote_configs, Utils.keyT(name), Text.equal)) {
+                case (?j) {
+                    return JSON.show(j);
+                };
+                case _ {
+                    return "json not found";
+                };
+            };
+        };
+
+        public func delete_config(name : Text) : async (Result.Result<Text, Text>) {
             switch (Trie.find(remote_configs, Utils.keyT(name), Text.equal)) {
                 case (?_) {
                     remote_configs := Trie.remove(remote_configs, Utils.keyT(name), Text.equal).0;

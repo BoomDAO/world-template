@@ -30,11 +30,12 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
 module {
-    public let Ledger = "ryjl3-tyaaa-aaaaa-aaaba-cai";
-    public let IC_Management = "aaaaa-aa";
-    public let ICRC1_Ledger = "mxzaz-hqaaa-aaaar-qaada-cai";
+    public let Ledger = "ryjl3-tyaaa-aaaaa-aaaba-cai"; //ICP Ledger canister_id
+    public let IC_Management = "aaaaa-aa"; //IC Management canister_id
+    public let ICRC1_Ledger = "mxzaz-hqaaa-aaaar-qaada-cai"; //ckBTC as ICRC-1 Token
 
-    public let core= []; //add your root_canister_ids
+    public let core= [""]; //add your root_canister_ids
     public let admins = []; //add admin principal for access control over DB
-    
+
+    public let payment_canister_id = "s55qq-oqaaa-aaaaa-aaakq-cai";  //!avoid changing this!
 }

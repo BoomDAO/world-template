@@ -1,7 +1,7 @@
 {
   "canisters": {
     "core": {
-      "main": "src/game_template_backend/core/core.mo",
+      "main": "src/game_template_backend/users/main.mo",
       "type": "motoko"
     }
   },

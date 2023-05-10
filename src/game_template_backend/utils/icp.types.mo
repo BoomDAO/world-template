@@ -91,7 +91,7 @@ module {
     };
 
     public type Response = {
-        #Success : ?Text;
+        #Success : Text;
         #Err : Text;
     };
 
