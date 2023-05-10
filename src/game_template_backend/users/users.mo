@@ -56,10 +56,8 @@ actor class Users() {
   //validating Core Canister as caller
   private func _isCore(p : Principal) : (Bool) {
     let _p : Text = Principal.toText(p);
-    for(i in ENV.core.vals()){
-        if(_p == i){
-            return true;
-        }
+    if (_p == ENV.core) {
+      return true;
     };
     return false;
   };

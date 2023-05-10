@@ -40,7 +40,6 @@ import Ledger "../modules/Ledger";
 import Utils "../utils/Utils";
 
 actor Payments {
-  
   //Txs block heights
   private stable var icp_txs : Trie.Trie<Text, ICP.Tx> = Trie.empty(); //last 2000 txs of IC Ledger (verified in Payments canister) to prevent spam check in Payments canister
   private stable var icrc_txs : Trie.Trie<Text, ICP.Tx_ICRC> = Trie.empty(); //last 2000 txs of ICRC-1 Ledger (verified in Payments canister) to prevent spam check in Payments canister

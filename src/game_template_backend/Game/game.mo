@@ -61,6 +61,41 @@ actor DegenRace {
         return false;
     };
 
+    private func apply_gacha_variables(gacha_id : Text) : async Result.Result<TUsers.CoreTxData, Text> {
+        let json = await get_config("GachasConfig");
+        var gacha_response = await Gacha.gen_gacha_variables(gacha_id, json);
+        let items_add = Buffer.Buffer<TUsers.Item>(0);
+        let items_remove = Buffer.Buffer<TUsers.Item>(0);
+        switch (gacha_response) {
+            case (#ok(gacha_variables)) {
+                for (gacha_variable in gacha_variables.vals()) {
+                    if (gacha_variable.quantity > 0) {
+                        items_add.add(gacha_variable);
+                    } else {
+                        var item_setting : TUsers.Item = {
+                            id = gacha_variable.id;
+                            quantity = gacha_variable.quantity;
+                        };
+                        items_remove.add(gacha_variable);
+                    };
+                };
+
+                let coreTxData : TUsers.CoreTxData = {
+                    items = ?{
+                        add = ?Buffer.toArray(items_add);
+                        remove = ?Buffer.toArray(items_remove);
+                    };
+                    profile = null;
+                    bought_offers = null;
+                };
+                return #ok(coreTxData);
+            };
+            case (#err(msg)) {
+                return #err(msg);
+            };
+        };
+    };
+
     //utils
     public shared ({ caller }) func add_admin(p : Text) : async () {
         assert (_isAdmin(caller));
@@ -80,6 +115,10 @@ actor DegenRace {
         _admins := Buffer.toArray(b);
     };
 
+    public query func cycleBalance() : async Nat {
+        Cycles.balance();
+    };
+
     //Remote_Configs of Game Canister
     public shared ({ caller }) func create_config(name : Text, json : Text) : async (Result.Result<Text, Text>) {
         await _configs.create_config(name, json);
@@ -97,173 +136,73 @@ actor DegenRace {
         await _configs.delete_config(name);
     };
 
-    //GAME LOGIC
-    let degen_race_event_duration = 1_000_000_000 * 86400; //24hrs
-    let degen_race_frequency = 1_000_000_000 * 10; //3600; //1hrs
+    //Burn and Mint NFT's
+    public shared (msg) func burn_nft(collection_canister_id : Text, tokenindex : EXT.TokenIndex, aid : EXT.AccountIdentifier) : async (Result.Result<TUsers.CoreTxData, Text>) {
+        assert (AccountIdentifier.fromPrincipal(msg.caller, null) == aid);
+        var tokenid : EXT.TokenIdentifier = EXTCORE.TokenIdentifier.fromText(collection_canister_id, tokenindex);
+        let collection = actor (collection_canister_id) : actor {
+            ext_burn : (EXT.TokenIdentifier, EXT.AccountIdentifier) -> async (Result.Result<(), EXT.CommonError>);
+            extGetTokenMetadata : (EXT.TokenIndex) -> async (?EXT.Metadata);
+        };
+        var res : Result.Result<(), EXT.CommonError> = await collection.ext_burn(tokenid, aid);
+        switch (res) {
+            case (#ok) {
+                //notify server using http req
+                var m : ?EXT.Metadata = await collection.extGetTokenMetadata(tokenindex);
+                var json : Text = "";
+                switch (m) {
+                    case (?md) {
+                        switch (md) {
+                            case (#fungible _) {};
+                            case (#nonfungible d) {
+                                switch (d.metadata) {
+                                    case (?x) {
+                                        switch (x) {
+                                            case (#json j) { json := j };
+                                            case (#blob _) {};
+                                            case (#data _) {};
+                                        };
+                                    };
+                                    case _ {};
+                                };
+                            };
+                        };
+                    };
+                    case _ {};
+                };
 
-    var event_end_ts : Int = 0;
-    var last_race_ts = HashMap.HashMap<Text, Int>(100, Text.equal, Text.hash);
-
-    var event_name = "SomeName";
-    var leaderboardTopCap = 3;
-    var leaderboards : Trie.Trie<Text, Leaderboard.Leaderboard> = Trie.empty();
-
-    //Leadboard func
-    //Dev
-    public shared ({ caller }) func dispose_leaderboard(user_principal : Principal, amount : Nat) : async (Result.Result<Text, Text>) {
-        //TODO: Check if caller has permission, else return #err
-        switch (Trie.find(leaderboards, Utils.keyT(event_name), Text.equal)) {
-            case (?leaderboard) {
-                leaderboard.dispose();
+                let metadata = json;
+                var nft_usage = JSON.get_key(metadata, "usage");
+                //Apply gacha to user
+                var output = await apply_gacha_variables(nft_usage); // we can use same offer id as the gacha id as they are the same value
+                switch (output) {
+                    case (#ok(rewards)) {
+                        var processedOfferId = nft_usage;
+                        let core = actor (ENV.core) : actor {
+                            get_user_canisterid : shared (Text) -> async (Result.Result<Text, Text>);
+                        };
+                        var canister_id : Text = "";
+                        switch (await core.get_user_canisterid(Principal.toText(msg.caller))){
+                            case (#ok c){
+                                canister_id := c;
+                            };
+                            case _ {};
+                        };
+                        let db = actor (canister_id) : actor {
+                            executeCoreTx : shared (Text, TUsers.CoreTxData) -> async ();
+                        };
+                        let response = await db.executeCoreTx(Principal.toText(msg.caller), rewards);
+                        return #ok(rewards);
+                    };
+                    case (#err(msg)) {
+                        return #err(msg # ", tried to burn nft of type: " #nft_usage);
+                    };
+                };
             };
-            case _ {
-                return #err("Leaderboard of name " # event_name # " not found");
+            case (#err(e)) {
+                return #err("Something went wrong while burning nft ");
             };
         };
-        return #ok("Leaderboard has been disposed!");
-    };
-    public shared ({ caller }) func increment_score(user_principal : Principal, amount : Nat) : async (Result.Result<Text, Text>) {
-        //TODO: Check if caller has permission, else return #err
-        switch (Trie.find(leaderboards, Utils.keyT(event_name), Text.equal)) {
-            case (?leaderboard) {
-                leaderboard.increment_score(Principal.toText(user_principal), amount);
-            };
-            case _ {
-                return #err("Leaderboard of name " # event_name # " not found");
-            };
-        };
-
-        return #ok("score incremented!");
-    };
-
-    //Game Dev func
-    public shared ({ caller }) func start_event(new_event_name : Text) : async (Result.Result<Text, Text>) {
-        //TODO: Check if caller has permission, else return #err
-
-        event_name := new_event_name;
-
-        //Check if leaderboard exist, if it doesnt then initialize a new one for this event
-        switch (Trie.find(leaderboards, Utils.keyT(new_event_name), Text.equal)) {
-            case (?leaderboard) {}; //Do nothing here
-            case _ {
-                let leaderboard = Leaderboard.Leaderboard(3);
-                leaderboards := Trie.put(leaderboards, Utils.keyT(new_event_name), Text.equal, leaderboard).0;
-            };
-        };
-
-        //Setup end ts
-        event_end_ts := Time.now() + degen_race_event_duration;
-        return #ok("degen race event started!");
-    };
-    public shared ({ caller }) func stop_event() : async (Result.Result<Text, Text>) {
-        //TODO: Check if caller has permission, else return #err
-
-        //Setup end ts
-        event_end_ts := 0;
-        return #ok("degen race event stopped!");
-    };
-
-    //Game User func
-    private func _check_is_degen_race_live() : Bool {
-        return event_end_ts >= Time.now();
-    };
-    public query func check_is_degen_race_live() : async Bool {
-        return _check_is_degen_race_live();
-    };
-    public query func check_next_play_wait_time(principal : Text) : async Int {
-        switch (last_race_ts.get(principal)) {
-            case (?lastTs) {
-                return lastTs;
-            };
-            case _ return 0;
-        };
-    };
-
-    private func _get_config(name : Text) : (Text) {
-        switch (Trie.find(remote_configs, Utils.keyT(name), Text.equal)) {
-            case (?j) {
-                return JSON.show(j);
-            };
-            case _ {
-                return "json not found";
-            };
-        };
-    };
-
-    public query func check_current_event_name() : async (Text) {
-        return event_name;
-    };
-    public query func check_can_start_race(principal : Text) : async (Result.Result<Text, Text>) {
-        //Check if degen race is live
-        var is_degen_race_live = _check_is_degen_race_live();
-        if (is_degen_race_live == false) {
-            return #err("degen race is not live.");
-        };
-        //Check if player can play, this is based on whether or not enough time has passed
-        switch (last_race_ts.get(principal)) {
-            case (?lastTs) {
-                //Check if not enough time has passed to return error
-                let now = Time.now();
-                if (Int.notEqual(lastTs, 0) and Int.less(now, lastTs + degen_race_frequency)) {
-                    return #err("no enough time has passed");
-                } else {}; //Do nothing
-            };
-            case _ {}; //Do nothing
-        };
-
-        return #ok("race started");
-    };
-    public shared ({ caller }) func complete_race() : async (Result.Result<Nat, Text>) {
-        let principal_txt = Principal.toText(caller);
-        let can_start_race = await check_can_start_race(principal_txt);
-
-        switch (can_start_race) {
-            case (#err e) {
-                return #err(e);
-            };
-            case (#ok e) {};
-        };
-
-        let now = Time.now();
-
-        last_race_ts.put(principal_txt, now);
-
-        switch (Trie.find(leaderboards, Utils.keyT(event_name), Text.equal)) {
-            case (?leaderboard) {
-                leaderboard.increment_score(principal_txt, 1);
-                //Request to store seconds/score in database
-                return #ok(leaderboard.get_score(principal_txt));
-            };
-            case _ {
-                return #err("Leaderboard of name " # event_name # " not found");
-            };
-        };
-    };
-
-    ///
-    // The last leaderboard entry will always be from the user_principal_text
-    ///
-    public query func get_leaderboard(user_principal_text : Text) : async (Result.Result<[Leaderboard.Entry], Text>) {
-        switch (Trie.find(leaderboards, Utils.keyT(event_name), Text.equal)) {
-            case (?leaderboard) {
-                var tops_and_self = leaderboard.get_top_users_and_scores();
-
-                let own_score = leaderboard.get_score(user_principal_text);
-                tops_and_self.add({
-                    user_principal = user_principal_text;
-                    score = own_score;
-                });
-
-                return #ok(Buffer.toArray(tops_and_self));
-            };
-            case _ {
-                return #err("Leaderboard of name " # event_name # " not found");
-            };
-        };
-    };
-
-    public query func cycleBalance() : async Nat {
-        Cycles.balance();
     };
 
 };
