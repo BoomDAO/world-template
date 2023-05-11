@@ -45,7 +45,6 @@ actor Payments {
   private stable var icrc_txs : Trie.Trie<Text, ICP.Tx_ICRC> = Trie.empty(); //last 2000 txs of ICRC-1 Ledger (verified in Payments canister) to prevent spam check in Payments canister
   private stable var icp_holdings : Trie.Trie<Text, Nat64> = Trie.empty(); //mapping game_canister_id -> ICP value they hodl
   private stable var icrc_holdings : Trie.Trie<Text, Nat> = Trie.empty(); //mapping game_canister_id -> ICRC-1 token they hold
-  private var payment_canister_id : Text = ENV.payment_canister_id; //to check txs details this canister_id
 
   //Internals
   private func update_holdings(_cid : Text, _amt : Nat64, _type : Text) : () {
@@ -154,7 +153,7 @@ actor Payments {
 
   //prevent spam ICP txs and perform action on successfull unique tx
   public shared (msg) func verify_tx_icp(height : Nat64, _to : Text, _from : Text, _amt : Nat64) : async (ICP.Response) {
-    assert (Principal.fromText(_to) == Principal.fromText(payment_canister_id));
+    assert (Principal.fromText(_to) == Principal.fromText(ENV.paymenthub_canister_id));
     var amt_ : ICP.Tokens = {
       e8s = _amt;
     };
@@ -192,7 +191,7 @@ actor Payments {
 
   //prevent spam ICRC-1 txs and perform action on successfull unique tx
   public shared (msg) func verify_tx_icrc(index : Nat, _to : Text, _from : Text, _amt : Nat) : async (ICP.Response) {
-    assert (Principal.fromText(_to) == Principal.fromText(payment_canister_id));
+    assert (Principal.fromText(_to) == Principal.fromText(ENV.paymenthub_canister_id));
     var res : Result.Result<Text, Text> = await query_icrc_tx(index, _to, _from, _amt);
     if (res == #ok("verified!")) {
       //tx spam check

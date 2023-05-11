@@ -31,7 +31,7 @@ import Trie2D "mo:base/Trie";
 
 import JSON "../utils/Json";
 import Parser "../utils/Parser";
-import Types "users.types";
+import Types "Types";
 import Utils "../utils/Utils";
 import ENV "../utils/Env";
 

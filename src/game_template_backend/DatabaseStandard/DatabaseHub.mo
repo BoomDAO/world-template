@@ -29,8 +29,8 @@ import Time "mo:base/Time";
 import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
-import Users "./users";
-import TUsers "./users.types";
+import Users "./DatabaseNode";
+import TUsers "./Types";
 import JSON "../utils/Json";
 import Parser "../utils/Parser";
 import ENV "../utils/Env";
@@ -39,7 +39,6 @@ import AccountIdentifier "../utils/AccountIdentifier";
 import Hex "../utils/Hex";
 import EXTCORE "../utils/Core";
 import EXT "../utils/ext.types";
-
 import Gacha "../modules/Gacha";
 import Configs "../modules/Configs";
 import Management "../modules/Management";

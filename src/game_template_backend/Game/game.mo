@@ -44,7 +44,7 @@ import EXT "../utils/ext.types";
 import TUsers "../users/users.types";
 import AccountIdentifier "../utils/AccountIdentifier";
 
-actor DegenRace {
+actor GameCanisterTemplate {
     //stable memory
     private stable var _admins : [Text] = ENV.admins;
     private stable var remote_configs : Trie.Trie<Text, JSON.JSON> = Trie.empty();
@@ -201,6 +201,43 @@ actor DegenRace {
             };
             case (#err(e)) {
                 return #err("Something went wrong while burning nft ");
+            };
+        };
+    };
+
+    //Payments : redirected to PaymentHub for verification and holding update.
+    public shared ({caller}) func verify_tx_icp(height : Nat64, _to : Text, _from : Text, _amt : Nat64, _paymentType : Text, _paymentMetadata : Text) : async (Result.Result<Text, Text>) {
+        let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
+            verify_tx_icp : shared (Nat64, Text, Text, Nat64) -> async ({
+                #Success : Text;
+                #Err : Text;
+            });
+        };
+        switch (await paymenthub.verify_tx_icp(height, _to, _from, _amt)) {
+            case (#Success s) {
+                //TODO : Here process your users assets updates on successfull ICP payment and return #ok() response accordingly 
+                return #ok(""); 
+            };
+            case (#Err e) {
+                return #err(e);
+            };
+        };
+    };
+
+    public shared ({caller}) func verify_tx_icrc(index : Nat, _to : Text, _from : Text, _amt : Nat, _paymentType : Text, _paymentMetadata : Text) : async (Result.Result<Text, Text>) {
+        let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
+            verify_tx_icrc : shared (Nat, Text, Text, Nat) -> async ({
+                #Success : Text;
+                #Err : Text;
+            });
+        };
+        switch (await paymenthub.verify_tx_icrc(index, _to, _from, _amt)) {
+            case (#Success s) {
+                //TODO : Here process your users assets updates on successfull ICP payment and return #ok() response accordingly 
+                return #ok(""); 
+            };
+            case (#Err e) {
+                return #err(e);
             };
         };
     };
