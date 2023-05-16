@@ -1,5 +1,6 @@
 import ICP "../utils/icp.types";
 import ICRC1 "../utils/icrc.types";
+import EXTCORE "../utils/Core";
 
 module {
     //IC Ledger Canister Interface
@@ -17,5 +18,12 @@ module {
     //ICRC-1 Ledger Canister Interface
     public type ICRC1 = actor {
         get_transactions : shared query (ICRC1.GetTransactionsRequest) -> async (ICRC1.GetTransactionsResponse);
+        icrc1_transfer : (ICRC1.TransferArg) -> async (ICRC1.Result);
+    };
+
+    //EXT V2 Canister Interface
+    public type EXT = actor {
+        getRegistry : shared query () -> async ([(Nat32, Text)]); 
+        transfer : shared (EXTCORE.TransferRequest) -> async (EXTCORE.TransferResponse);
     };
 };

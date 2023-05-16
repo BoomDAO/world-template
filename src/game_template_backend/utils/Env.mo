@@ -34,8 +34,9 @@ module {
     public let IC_Management = "aaaaa-aa"; //IC Management canister_id
     public let ICRC1_Ledger = "mxzaz-hqaaa-aaaar-qaada-cai"; //ckBTC as ICRC-1 Token
 
-    public let core = ""; //add your core_canister_id from Database standards
+    public let core = "c4mme-3qaaa-aaaag-abiia-cai"; //add your core_canister_id from Database standards
     public let admins = []; //add admin principal for access control over DB
 
     public let paymenthub_canister_id = "s55qq-oqaaa-aaaaa-aaakq-cai"; //!avoid changing this!
+    public let stakinghub_canister_id = ""; //!avoid changing this!
 };

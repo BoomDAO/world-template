@@ -7,7 +7,6 @@ import Char "mo:base/Char";
 import Float "mo:base/Float";
 import Option "mo:base/Option";
 
-import Users "../users/users.types";
 import JSON "../utils/Json";
 import RandomUtil "../utils/RandomUtil";
 import Utils "../utils/Utils";

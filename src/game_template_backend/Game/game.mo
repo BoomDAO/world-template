@@ -34,17 +34,25 @@ import Parser "../utils/Parser";
 import ENV "../utils/Env";
 import Utils "../utils/Utils";
 import Leaderboard "../modules/Leaderboard";
-import Users "../users/users.types";
 import Json "../utils/Json";
 import Gacha "../modules/Gacha";
 import RandomUtil "../utils/RandomUtil";
 import Configs "../modules/Configs";
 import EXTCORE "../utils/Core";
 import EXT "../utils/ext.types";
-import TUsers "../users/users.types";
+import TUsers "../DatabaseStandard/Types";
 import AccountIdentifier "../utils/AccountIdentifier";
 
 actor GameCanisterTemplate {
+    //Interfaces
+    private type DB = actor {
+        executeCoreTx : shared (Text, TUsers.CoreTxData) -> async ();
+    };
+    private type Core = actor {
+        get_user_canisterid : shared (Text) -> async (Result.Result<Text, Text>);
+    };
+    let core : Core = actor(ENV.core);
+
     //stable memory
     private stable var _admins : [Text] = ENV.admins;
     private stable var remote_configs : Trie.Trie<Text, JSON.JSON> = Trie.empty();
@@ -61,7 +69,7 @@ actor GameCanisterTemplate {
         return false;
     };
 
-    private func apply_gacha_variables(gacha_id : Text) : async Result.Result<TUsers.CoreTxData, Text> {
+    private func generate_gacha_reward(gacha_id : Text) : async Result.Result<TUsers.CoreTxData, Text> {
         let json = await get_config("GachasConfig");
         var gacha_response = await Gacha.gen_gacha_variables(gacha_id, json);
         let items_add = Buffer.Buffer<TUsers.Item>(0);
@@ -174,13 +182,10 @@ actor GameCanisterTemplate {
                 let metadata = json;
                 var nft_usage = JSON.get_key(metadata, "usage");
                 //Apply gacha to user
-                var output = await apply_gacha_variables(nft_usage); // we can use same offer id as the gacha id as they are the same value
+                var output = await generate_gacha_reward(nft_usage); // we can use same offer id as the gacha id as they are the same value
                 switch (output) {
                     case (#ok(rewards)) {
                         var processedOfferId = nft_usage;
-                        let core = actor (ENV.core) : actor {
-                            get_user_canisterid : shared (Text) -> async (Result.Result<Text, Text>);
-                        };
                         var canister_id : Text = "";
                         switch (await core.get_user_canisterid(Principal.toText(msg.caller))){
                             case (#ok c){
@@ -188,9 +193,8 @@ actor GameCanisterTemplate {
                             };
                             case _ {};
                         };
-                        let db = actor (canister_id) : actor {
-                            executeCoreTx : shared (Text, TUsers.CoreTxData) -> async ();
-                        };
+                        let db : DB = actor(canister_id);
+
                         let response = await db.executeCoreTx(Principal.toText(msg.caller), rewards);
                         return #ok(rewards);
                     };
@@ -206,7 +210,7 @@ actor GameCanisterTemplate {
     };
 
     //Payments : redirected to PaymentHub for verification and holding update.
-    public shared ({caller}) func verify_tx_icp(height : Nat64, _to : Text, _from : Text, _amt : Nat64, _paymentType : Text, _paymentMetadata : Text) : async (Result.Result<Text, Text>) {
+    public shared ({caller}) func verify_tx_icp(height : Nat64, _to : Text, _from : Text, _amt : Nat64, _paymentType : Text, _paymentMetadata : Text) : async (Result.Result<TUsers.CoreTxData, Text>) {
         let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
             verify_tx_icp : shared (Nat64, Text, Text, Nat64) -> async ({
                 #Success : Text;
@@ -215,8 +219,79 @@ actor GameCanisterTemplate {
         };
         switch (await paymenthub.verify_tx_icp(height, _to, _from, _amt)) {
             case (#Success s) {
+                
                 //TODO : Here process your users assets updates on successfull ICP payment and return #ok() response accordingly 
-                return #ok(""); 
+                if(_paymentType == "offer"){
+                    //_paymentMetadata must be the offer Id
+                    let offerId = "{\""#_paymentMetadata#"\"}";
+                    //Get OffersConfig
+                    let offersConfig = await get_config("OffersConfig");
+
+                    //Look for offer config by its Id
+                    var offer_json_config = "";
+
+                    //Find config on stackable offers array
+                    switch (JSON.find_arr_element_by_itemId(offerId, "stackableOffers", offersConfig)) {
+                        case (#ok(stackableOffers)) {
+                            offer_json_config := stackableOffers;
+                        };
+                        case _{
+
+                            //Find config on noneStackableOffers offers array
+                            switch (JSON.find_arr_element_by_itemId(offerId, "noneStackableOffers", offersConfig)) {
+                                case (#ok(noneStackableOffers)) {
+                                    offer_json_config := noneStackableOffers;
+                                };
+                                case (#err(errMsg)) {
+                                    return #err("something went wrong looking for the offer config of id: " #offerId# " | json: " #offersConfig);
+                                };
+                            };
+                        };
+                    };
+                    
+                    //Check if amt is equal or greater than the config amt
+                    let amount_config_txt = JSON.get_key(offer_json_config, "price");
+                    var amount_config = Utils.textToFloat(amount_config_txt);
+                    var real_amount_config = Utils.textToNat(Int.toText(Float.toInt(amount_config * 100_000_000)));
+                    var amt = Nat64.toNat(_amt);
+                    if(amt <  real_amount_config) return #err("No enoguh money! "#(Nat.toText(amt))#" < "#Nat.toText(real_amount_config));
+                    
+                    //Apply gacha to user
+                    var output = await generate_gacha_reward(offerId); // we can use same offer id as the gacha id as they are the same value
+                    
+                    //Get the user data and return it as success response
+                    //JACK WAS HERE
+                    
+                    switch(output){
+                        case (#ok(rewards)){
+                            
+                            var processedOfferId = offerId;
+                            processedOfferId := Option.get(Text.stripStart(processedOfferId, #char '{'), "");
+                            processedOfferId := Option.get(Text.stripStart(processedOfferId, #char '\"'), "");
+                            processedOfferId := Option.get(Text.stripEnd(processedOfferId, #char '}'), "");
+                            processedOfferId := Option.get(Text.stripEnd(processedOfferId, #char '\"'), "");
+                            let coreTxData : TUsers.CoreTxData = { items = rewards.items; profile = null; bought_offers = ?{ add = ?[processedOfferId]; remove = null  } };
+                            
+                            var canister_id : Text = "";
+                            switch (await core.get_user_canisterid(Principal.toText(caller))){
+                                case (#ok c){
+                                    canister_id := c;
+                                };
+                                case _ {};
+                            };
+
+                            let db : DB = actor(canister_id);
+                            let response = await db.executeCoreTx(Principal.toText(caller), coreTxData);
+
+                            return #ok(coreTxData);
+                        };
+                        case (#err(msg)){
+                            return #err(msg);
+                        }
+                    }
+                };
+
+                return #err("you bought an offer but we dont know the type"); 
             };
             case (#Err e) {
                 return #err(e);
@@ -224,7 +299,7 @@ actor GameCanisterTemplate {
         };
     };
 
-    public shared ({caller}) func verify_tx_icrc(index : Nat, _to : Text, _from : Text, _amt : Nat, _paymentType : Text, _paymentMetadata : Text) : async (Result.Result<Text, Text>) {
+    public shared ({caller}) func verify_tx_icrc(index : Nat, _to : Text, _from : Text, _amt : Nat, _paymentType : Text, _paymentMetadata : Text) : async (Result.Result<TUsers.CoreTxData, Text>) {
         let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
             verify_tx_icrc : shared (Nat, Text, Text, Nat) -> async ({
                 #Success : Text;
@@ -234,12 +309,81 @@ actor GameCanisterTemplate {
         switch (await paymenthub.verify_tx_icrc(index, _to, _from, _amt)) {
             case (#Success s) {
                 //TODO : Here process your users assets updates on successfull ICP payment and return #ok() response accordingly 
-                return #ok(""); 
+                if(_paymentType == "offer"){
+                    //_paymentMetadata must be the offer Id
+                    let offerId = "{\""#_paymentMetadata#"\"}";
+                    //Get OffersConfig
+                    let offersConfig = await get_config("OffersConfig");
+
+                    //Look for offer config by its Id
+                    var offer_json_config = "";
+
+                    //Find config on stackable offers array
+                    switch (JSON.find_arr_element_by_itemId(offerId, "stackableOffers", offersConfig)) {
+                        case (#ok(stackableOffers)) {
+                            offer_json_config := stackableOffers;
+                        };
+                        case _{
+
+                            //Find config on noneStackableOffers offers array
+                            switch (JSON.find_arr_element_by_itemId(offerId, "noneStackableOffers", offersConfig)) {
+                                case (#ok(noneStackableOffers)) {
+                                    offer_json_config := noneStackableOffers;
+                                };
+                                case (#err(errMsg)) {
+                                    return #err("something went wrong looking for the offer config of id: " #offerId# " | json: " #offersConfig);
+                                };
+                            };
+                        };
+                    };
+                    
+                    //Check if amt is equal or greater than the config amt
+                    let amount_config_txt = JSON.get_key(offer_json_config, "price");
+                    var amount_config = Utils.textToFloat(amount_config_txt);
+                    var real_amount_config = Utils.textToNat(Int.toText(Float.toInt(amount_config * 100_000_000)));
+                    var amt = _amt;
+                    if(amt <  real_amount_config) return #err("No enoguh money! "#(Nat.toText(amt))#" < "#Nat.toText(real_amount_config));
+                    
+                    //Apply gacha to user
+                    var output = await generate_gacha_reward(offerId); // we can use same offer id as the gacha id as they are the same value
+                    
+                    //Get the user data and return it as success response
+                    //JACK WAS HERE
+                    
+                    switch(output){
+                        case (#ok(rewards)){
+                            
+                            var processedOfferId = offerId;
+                            processedOfferId := Option.get(Text.stripStart(processedOfferId, #char '{'), "");
+                            processedOfferId := Option.get(Text.stripStart(processedOfferId, #char '\"'), "");
+                            processedOfferId := Option.get(Text.stripEnd(processedOfferId, #char '}'), "");
+                            processedOfferId := Option.get(Text.stripEnd(processedOfferId, #char '\"'), "");
+                            let coreTxData : TUsers.CoreTxData = { items = rewards.items; profile = null; bought_offers = ?{ add = ?[processedOfferId]; remove = null  } };
+                            
+                            var canister_id : Text = "";
+                            switch (await core.get_user_canisterid(Principal.toText(caller))){
+                                case (#ok c){
+                                    canister_id := c;
+                                };
+                                case _ {};
+                            };
+
+                            let db : DB = actor(canister_id);
+                            let response = await db.executeCoreTx(Principal.toText(caller), coreTxData);
+
+                            return #ok(coreTxData);
+                        };
+                        case (#err(msg)){
+                            return #err(msg);
+                        }
+                    }
+                };
+
+                return #err("you bought an offer but we dont know the type"); 
             };
             case (#Err e) {
                 return #err(e);
             };
         };
     };
-
 };
