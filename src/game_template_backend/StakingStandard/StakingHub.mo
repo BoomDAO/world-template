@@ -26,6 +26,7 @@ import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
+import Timer "mo:base/Timer";
 import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
@@ -43,16 +44,19 @@ import Utils "../utils/Utils";
 actor StakingHub {
   type ICPStake = {
     amount : Nat64;
-    stakedAt : Int;
+    dissolveAt : Int;
+    isDissolved : Bool;
   };
   type ICRCStake = {
     amount : Nat;
-    stakedAt : Int;
+    dissolveAt : Int;
+    isDissolved : Bool;
   };
   type EXTStake = {
     staker : Text; //principal
     tokenIndex : Nat32;
-    stakedAt : Int;
+    dissolveAt : Int;
+    isDissolved : Bool;
   };
 
   //Txs block heights
@@ -74,7 +78,8 @@ actor StakingHub {
               Text.equal,
               {
                 amount = (_amt + h.amount);
-                stakedAt = Time.now();
+                dissolveAt = 0;
+                isDissolved = false;
               },
             ).0;
           };
@@ -85,7 +90,8 @@ actor StakingHub {
               Text.equal,
               {
                 amount = _amt;
-                stakedAt = Time.now();
+                dissolveAt = 0;
+                isDissolved = false;
               },
             ).0;
           };
@@ -104,7 +110,8 @@ actor StakingHub {
                   Text.equal,
                   {
                     amount = (Nat64.toNat(_amt) + h.amount);
-                    stakedAt = Time.now();
+                    dissolveAt = 0;
+                    isDissolved = false;
                   },
                 ).0;
                 icrc_stakes := Trie.put(icrc_stakes, Utils.keyT(_of), Text.equal, t).0;
@@ -117,7 +124,8 @@ actor StakingHub {
                   Text.equal,
                   {
                     amount = (Nat64.toNat(_amt));
-                    stakedAt = Time.now();
+                    dissolveAt = 0;
+                    isDissolved = false;
                   },
                 ).0;
                 icrc_stakes := Trie.put(icrc_stakes, Utils.keyT(_of), Text.equal, t).0;
@@ -132,7 +140,8 @@ actor StakingHub {
               Text.equal,
               {
                 amount = (Nat64.toNat(_amt));
-                stakedAt = Time.now();
+                dissolveAt = 0;
+                isDissolved = false;
               },
             ).0;
             icrc_stakes := Trie2D.put(icrc_stakes, Utils.keyT(_of), Text.equal, _t).0;
@@ -146,7 +155,8 @@ actor StakingHub {
         var e : EXTStake = {
           staker = _of;
           tokenIndex = Option.get(nft_index, default);
-          stakedAt = Time.now();
+          dissolveAt = 0;
+          isDissolved = false;
         };
         ext_stakes := Trie.put(ext_stakes, Utils.keyT(key), Text.equal, e).0;
       };
@@ -257,6 +267,80 @@ actor StakingHub {
     };
   };
 
+  func _process_withdrawal() : async () {
+    let delay = 86400000000000; //24hrs in nanoseconds
+    //ICP withdrawal processing
+    let ICP_Ledger : Ledger.ICP = actor (ENV.Ledger);
+    for ((_to, _stakes) in Trie.iter(icp_stakes)) {
+      let minimum_amount_to_withdraw : Nat64 = 100000000; //adjust it accordingly, here its 1 ICP
+      if ((_stakes.dissolveAt + delay <= Time.now()) and _stakes.amount >= minimum_amount_to_withdraw and _stakes.isDissolved == true) {
+        var amt : Nat64 = _stakes.amount - 10000; //deducting fees from user stakes for ICP, you can change it accordingly
+        var _req : ICP.TransferArgs = {
+          to = Hex.decode(AccountIdentifier.fromText(_to, null));
+          fee = {
+            e8s = 10000;
+          };
+          memo = 0;
+          from_subaccount = null;
+          created_at_time = null;
+          amount = {
+            e8s = amt;
+          };
+        };
+        var res : ICP.TransferResult = await ICP_Ledger.transfer(_req);
+        icp_stakes := Trie.remove(icp_stakes, Utils.keyT(_to), Text.equal).0;
+      };
+    };
+
+    //ICRC-1 withdrawal processing
+    for ((_to, _trie) in Trie.iter(icrc_stakes)) {
+      for ((_canister_id, _stakes) in Trie.iter(_trie)) {
+        let minimum_amount_to_withdraw : Nat = 100; //adjust it accordingly
+        if ((_stakes.dissolveAt + delay <= Time.now()) and _stakes.amount >= minimum_amount_to_withdraw and _stakes.isDissolved == true) {
+          var amt : Nat = _stakes.amount - 10; //deducting fees from user stakes for ckBTC, you can change it accordingly for different ICRC-1 Tokens
+          var _req : ICRC1.TransferArg = {
+            to = {
+              owner = Principal.fromText(_to);
+              subaccount = null;
+            };
+            fee = null;
+            memo = null;
+            from_subaccount = null;
+            created_at_time = null;
+            amount = amt;
+          };
+          let ICRC1_Ledger : Ledger.ICRC1 = actor (_canister_id);
+          var res : ICRC1.Result = await ICRC1_Ledger.icrc1_transfer(_req);
+          let x : Nat = 0;
+          var t : Trie.Trie<Text, ICRCStake> = _trie;
+          t := Trie.remove(t, Utils.keyT(_canister_id), Text.equal).0;
+          icrc_stakes := Trie.put(icrc_stakes, Utils.keyT(_to), Text.equal, t).0;
+        };
+      };
+    };
+
+    //EXT V2 NFT withdrawal processing
+    for ((_key, _stakes) in Trie.iter(ext_stakes)) {
+      if (_stakes.dissolveAt + delay <= Time.now() and _stakes.isDissolved == true) {
+        let path = Iter.toArray(Text.tokens(_key, #text("/")));
+        let collection_canister_id = path[0];
+        let index = Nat32.fromNat(Utils.textToNat(path[1]));
+
+        var _req : EXTCORE.TransferRequest = {
+          from = #principal(Principal.fromText(ENV.stakinghub_canister_id));
+          to = #principal(Principal.fromText(_stakes.staker));
+          token = EXTCORE.TokenIdentifier.fromText(collection_canister_id, index);
+          amount = 1;
+          memo = Text.encodeUtf8("");
+          notify = false;
+          subaccount = null;
+        };
+        let EXT : Ledger.EXT = actor (collection_canister_id);
+        var res : EXTCORE.TransferResponse = await EXT.transfer(_req);
+      };
+    };
+  };
+
   //prevent spam ICP txs and perform action on successfull unique tx
   public shared (msg) func update_icp_stakes(height : Nat64, _to : Text, _from : Text, _amt : Nat64) : async (ICP.Response) {
     assert (Principal.fromText(_from) == msg.caller); //If payment done by correct person and _from arg is passed correctly
@@ -353,94 +437,93 @@ actor StakingHub {
     };
   };
 
-  public shared ({ caller }) func process_withdrawal(_type : Text) : async () {
-    let delay = 86400000000000; //24hrs in nanoseconds
-    //ICP withdrawal processing
-    let ICP_Ledger : Ledger.ICP = actor (ENV.Ledger);
-    for ((_to, _stakes) in Trie.iter(icp_stakes)) {
-      let minimum_amount_to_withdraw : Nat64 = 100000000; //adjust it accordingly, here its 1 ICP
-      if ((_stakes.stakedAt + delay <= Time.now()) and _stakes.amount >= minimum_amount_to_withdraw) {
-        var amt : Nat64 = _stakes.amount - 10000; //deducting fees from user stakes for ICP, you can change it accordingly
-        var _req : ICP.TransferArgs = {
-          to = Hex.decode(AccountIdentifier.fromText(_to, null));
-          fee = {
-            e8s = 10000;
-          };
-          memo = 0;
-          from_subaccount = null;
-          created_at_time = null;
-          amount = {
-            e8s = amt;
-          };
-        };
-        var res : ICP.TransferResult = await ICP_Ledger.transfer(_req);
-        let x : Nat64 = 0;
+  public shared (msg) func dissolve_icp() : async (Result.Result<Text, Text>) {
+    let _of : Text = Principal.toText(msg.caller);
+    switch (Trie.find(icp_stakes, Utils.keyT(_of), Text.equal)) {
+      case (?s) {
         icp_stakes := Trie.put(
           icp_stakes,
-          Utils.keyT(_to),
+          Utils.keyT(_of),
           Text.equal,
           {
-            amount = x;
-            stakedAt = Time.now();
+            amount = s.amount;
+            dissolveAt = Time.now();
+            isDissolved = true;
           },
         ).0;
+        return #ok("dissolved");
       };
-    };
-
-    //ICRC-1 withdrawal processing
-    for ((_to, _trie) in Trie.iter(icrc_stakes)) {
-      for ((_canister_id, _stakes) in Trie.iter(_trie)) {
-        let minimum_amount_to_withdraw : Nat = 100; //adjust it accordingly
-        if ((_stakes.stakedAt + delay <= Time.now()) and _stakes.amount >= minimum_amount_to_withdraw) {
-          var amt : Nat = _stakes.amount - 10; //deducting fees from user stakes for ckBTC, you can change it accordingly for different ICRC-1 Tokens
-          var _req : ICRC1.TransferArg = {
-            to = {
-              owner = Principal.fromText(_to);
-              subaccount = null;
-            };
-            fee = null;
-            memo = null;
-            from_subaccount = null;
-            created_at_time = null;
-            amount = amt;
-          };
-          let ICRC1_Ledger : Ledger.ICRC1 = actor (_canister_id);
-          var res : ICRC1.Result = await ICRC1_Ledger.icrc1_transfer(_req);
-          let x : Nat = 0;
-          var t : Trie.Trie<Text, ICRCStake> = _trie;
-          t := Trie.put(
-            t,
-            Utils.keyT(_canister_id),
-            Text.equal,
-            {
-              amount = x;
-              stakedAt = Time.now();
-            },
-          ).0;
-          icrc_stakes := Trie.put(icrc_stakes, Utils.keyT(_to), Text.equal, t).0;
-        };
-      };
-    };
-
-    //EXT V2 NFT withdrawal processing
-    for ((_key, _stakes) in Trie.iter(ext_stakes)) {
-      if (_stakes.stakedAt + delay <= Time.now()) {
-        let path = Iter.toArray(Text.tokens(_key, #text("/")));
-        let collection_canister_id = path[0];
-        let index = Nat32.fromNat(Utils.textToNat(path[1]));
-
-        var _req : EXTCORE.TransferRequest = {
-          from = #principal(Principal.fromText(ENV.stakinghub_canister_id));
-          to = #principal(Principal.fromText(_stakes.staker));
-          token = EXTCORE.TokenIdentifier.fromText(collection_canister_id, index);
-          amount = 1;
-          memo = Text.encodeUtf8("");
-          notify = false;
-          subaccount = null;
-        };
-        let EXT : Ledger.EXT = actor (collection_canister_id);
-        var res : EXTCORE.TransferResponse = await EXT.transfer(_req);
+      case _ {
+        return #err("caller does not have staked ICP");
       };
     };
   };
+
+  public shared (msg) func dissolve_icrc(token_canister_id : Text) : async (Result.Result<Text, Text>) {
+    let _of : Text = Principal.toText(msg.caller);
+    switch (Trie.find(icrc_stakes, Utils.keyT(_of), Text.equal)) {
+      case (?_trie) {
+        switch (Trie.find(_trie, Utils.keyT(token_canister_id), Text.equal)) {
+          case (?s) {
+            var t : Trie.Trie<Text, ICRCStake> = _trie;
+            t := Trie.put(
+              t,
+              Utils.keyT(token_canister_id),
+              Text.equal,
+              {
+                amount = s.amount;
+                dissolveAt = Time.now();
+                isDissolved = true;
+              },
+            ).0;
+            icrc_stakes := Trie.put(icrc_stakes, Utils.keyT(_of), Text.equal, t).0;
+            return #ok("dissolved");
+          };
+          case _ {
+            return #err("caller does not have staked ICRC-1 tokens of : " #token_canister_id # " canister");
+          };
+        };
+      };
+      case _ {
+        return #err("caller does not have staked ICRC-1 tokens");
+      };
+    };
+  };
+
+  public shared (msg) func dissolve_ext(collection_canister_id : Text, index : Nat32) : async (Result.Result<Text, Text>) {
+    let _of : Text = Principal.toText(msg.caller);
+    let key : Text = collection_canister_id # "/" #Nat32.toText(index);
+    switch (Trie.find(ext_stakes, Utils.keyT(key), Text.equal)) {
+      case (?s) {
+        if (s.staker != _of) {
+          return #err("caller is not authorized to dissolve this NFT");
+        };
+        ext_stakes := Trie.put(
+          ext_stakes,
+          Utils.keyT(key),
+          Text.equal,
+          {
+            staker = s.staker;
+            tokenIndex = s.tokenIndex;
+            dissolveAt = Time.now();
+            isDissolved = true;
+          },
+        ).0;
+        return #ok("dissolved");
+      };
+      case _ {
+        return #err("caller does not have this NFT of collection staked");
+      };
+    };
+  };
+
+  //cron jobs for automatic withdrawals of ICP/ICRC-1/EXT tokens
+  let period : Timer.Duration = #seconds (24 * 60 * 60); //duration set to 24hrs
+  let cron = Timer.recurringTimer(period, _process_withdrawal);
+
+  public shared (msg) func kill_cron() : async () {
+    assert(Principal.toText(msg.caller) == ENV.StakingHubAdmin);
+    Timer.cancelTimer(cron);
+  } ;
+  
 };

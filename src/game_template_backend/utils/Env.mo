@@ -39,4 +39,5 @@ module {
 
     public let paymenthub_canister_id = "s55qq-oqaaa-aaaaa-aaakq-cai"; //!avoid changing this!
     public let stakinghub_canister_id = ""; //!avoid changing this!
+    public let StakingHubAdmin = "";
 };
