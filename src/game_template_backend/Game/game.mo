@@ -42,6 +42,8 @@ import EXTCORE "../utils/Core";
 import EXT "../utils/ext.types";
 import TUsers "../DatabaseStandard/Types";
 import AccountIdentifier "../utils/AccountIdentifier";
+import ICP "../utils/icp.types";
+import ICRC1 "../utils/icrc.types";
 
 actor GameCanisterTemplate {
     //Interfaces
@@ -69,7 +71,7 @@ actor GameCanisterTemplate {
         return false;
     };
 
-    private func generate_gacha_reward(gacha_id : Text) : async Result.Result<TUsers.CoreTxData, Text> {
+    private func _generate_gacha_reward(gacha_id : Text) : async (Result.Result<TUsers.CoreTxData, Text>) {
         let json = await get_config("GachasConfig");
         var gacha_response = await Gacha.gen_gacha_variables(gacha_id, json);
         let items_add = Buffer.Buffer<TUsers.Item>(0);
@@ -102,6 +104,21 @@ actor GameCanisterTemplate {
                 return #err(msg);
             };
         };
+    };
+    public func generate_gacha_reward(jsonString : Text) : async (Result.Result<Text, Text>) {
+
+        let metadata = jsonString;
+        var nft_usage = JSON.get_key(metadata, "usage");
+        let reward = await _generate_gacha_reward(nft_usage);
+        // return switch(reward){
+        //     case (#ok(data)) {
+        //         return #ok(data);
+        //     };
+        //     case (#err(msg)) {
+        //         return #err(msg);
+        //     }
+        // }
+        return #ok(nft_usage);
     };
 
     //utils
@@ -182,7 +199,7 @@ actor GameCanisterTemplate {
                 let metadata = json;
                 var nft_usage = JSON.get_key(metadata, "usage");
                 //Apply gacha to user
-                var output = await generate_gacha_reward(nft_usage); // we can use same offer id as the gacha id as they are the same value
+                var output = await _generate_gacha_reward(nft_usage); // we can use same offer id as the gacha id as they are the same value
                 switch (output) {
                     case (#ok(rewards)) {
                         var processedOfferId = nft_usage;
@@ -257,7 +274,7 @@ actor GameCanisterTemplate {
                     if(amt <  real_amount_config) return #err("No enoguh money! "#(Nat.toText(amt))#" < "#Nat.toText(real_amount_config));
                     
                     //Apply gacha to user
-                    var output = await generate_gacha_reward(offerId); // we can use same offer id as the gacha id as they are the same value
+                    var output = await _generate_gacha_reward(offerId); // we can use same offer id as the gacha id as they are the same value
                     
                     //Get the user data and return it as success response
                     //JACK WAS HERE
@@ -345,7 +362,7 @@ actor GameCanisterTemplate {
                     if(amt <  real_amount_config) return #err("No enoguh money! "#(Nat.toText(amt))#" < "#Nat.toText(real_amount_config));
                     
                     //Apply gacha to user
-                    var output = await generate_gacha_reward(offerId); // we can use same offer id as the gacha id as they are the same value
+                    var output = await _generate_gacha_reward(offerId); // we can use same offer id as the gacha id as they are the same value
                     
                     //Get the user data and return it as success response
                     //JACK WAS HERE
@@ -385,5 +402,22 @@ actor GameCanisterTemplate {
                 return #err(e);
             };
         };
+    };
+
+    //Withdraw ICP/ICRC-1 tokens from our PaymentHub canister
+    public func withdraw_icp() : async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>) {
+        let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
+            withdraw_icp : shared () -> async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text })
+        };
+        let res = await paymenthub.withdraw_icp();
+        return res;
+    };
+
+    public func withdraw_icrc(token_canister_id : Text) : async (Result.Result<ICRC1.Result, { #TxErr : ICRC1.TransferError; #Err : Text }>) {
+        let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
+            withdraw_icrc : shared (Text) -> async (Result.Result<ICRC1.Result, { #TxErr : ICRC1.TransferError; #Err : Text })
+        };
+        let res = await paymenthub.withdraw_icrc(token_canister_id);
+        return res;
     };
 };
