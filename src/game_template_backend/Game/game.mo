@@ -60,6 +60,13 @@ actor GameCanisterTemplate {
     private stable var remote_configs : Trie.Trie<Text, JSON.JSON> = Trie.empty();
     private var _configs = Configs.Configs(remote_configs);
 
+    system func preupgrade() {
+        remote_configs := _configs.remote_configs;
+    };
+    system func postupgrade() {
+        remote_configs := Trie.empty();
+    };
+
     //Internal Functions
     private func _isAdmin(_p : Principal) : (Bool) {
         var p : Text = Principal.toText(_p);
