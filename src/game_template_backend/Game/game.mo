@@ -407,7 +407,7 @@ actor GameCanisterTemplate {
     //Withdraw ICP/ICRC-1 tokens from our PaymentHub canister
     public func withdraw_icp() : async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>) {
         let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
-            withdraw_icp : shared () -> async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text })
+            withdraw_icp : shared () -> async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>);
         };
         let res = await paymenthub.withdraw_icp();
         return res;
@@ -415,7 +415,7 @@ actor GameCanisterTemplate {
 
     public func withdraw_icrc(token_canister_id : Text) : async (Result.Result<ICRC1.Result, { #TxErr : ICRC1.TransferError; #Err : Text }>) {
         let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
-            withdraw_icrc : shared (Text) -> async (Result.Result<ICRC1.Result, { #TxErr : ICRC1.TransferError; #Err : Text })
+            withdraw_icrc : shared (Text) -> async (Result.Result<ICRC1.Result, { #TxErr : ICRC1.TransferError; #Err : Text }>);
         };
         let res = await paymenthub.withdraw_icrc(token_canister_id);
         return res;
