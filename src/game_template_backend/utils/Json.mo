@@ -24,6 +24,15 @@ module JSON {
         #Null;
     };
 
+    public func strip(text : Text, start : Char, end : Char) : (Text) 
+    {
+        var placeholder = text;
+        var str = placeholder;
+        str := Option.get(Text.stripStart(str, #char start), placeholder);
+        placeholder := str;
+        str := Option.get(Text.stripEnd(str, #char end), placeholder);
+        return str;
+    };
     public func show(json : JSON) : Text = switch (json) {
         case (#Number(v)) { Int.toText(v); };
         case (#Float(v)) { Float.format(#fix(2), v); };
@@ -60,6 +69,26 @@ module JSON {
         };
         case _ { return "not found" };
         };
+    };
+
+    public func get_value(jsonEntry : Text) : (Text){
+        var unwrapped = strip(jsonEntry, '{', '}');
+        var charsIter = unwrapped.chars();
+        var value = "";
+        var startAdding : Bool = false;
+
+        for(x in charsIter){
+            if(startAdding == false){
+                if(x == ':'){
+                    startAdding := true;
+                };
+            }
+            else{
+                value := value #  Char.toText(x) ;
+            };
+        };
+
+        return strip(value,'\"', '\"');// strip(keyValue[1], '\"', '\"');
     };
 
     public func get_element_by_field_value(json_arr : Text, arr_e_field_name : Text, arr_e_field_val : Text) : (Result.Result<Text, Text>){
@@ -347,7 +376,9 @@ module JSON {
     private func getKey(json : JSON, _key : Text, found : Bool) : Text = switch (json) {
         case (#Number(v)) { Int.toText(v); };
         case (#Float(v)) { Float.format(#fix(2), v); };
-        case (#String(v)) { "\"" # v # "\""; };
+        case (#String(v)) { 
+            return strip("\"" # v # "\"", '\"', '\"');
+         };
         case (#Array(v)) {
             var s = "[";
             for (i in v.vals()) {

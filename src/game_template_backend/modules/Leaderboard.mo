@@ -16,7 +16,7 @@ module Leaderboard {
         var users_score_mapping : Trie.Trie<Text, Nat> = Trie.empty();
         let capacity : Nat = cap;
 
-        public func get_score(user_principal : Text) : Nat {
+        public func getScore(user_principal : Text) : Nat {
             switch (Trie.find(users_score_mapping, Utils.keyT(user_principal), Text.equal)) { //Trie.find(users_score_mapping, Utils.keyT(user_principal), Text.equal)
                 case (?score) {
                     return score;
@@ -27,17 +27,17 @@ module Leaderboard {
             };
         };
 
-        public func increment_score(user_principal : Text, amount : Nat) {
-            var current_score : Nat = get_score(user_principal);
+        public func increamentScore(user_principal : Text, amount : Nat) {
+            var current_score : Nat = getScore(user_principal);
 
             let new_score = current_score + amount;
             users_score_mapping := Trie.put(users_score_mapping, Utils.keyT(user_principal), Text.equal, new_score).0;
 
             //Do logic to locate user among top users
-            locate_user(user_principal, new_score);
+            locateUser_(user_principal, new_score);
         };
 
-        private func locate_user(user_principal : Text, new_score : Nat) {
+        private func locateUser_(user_principal : Text, new_score : Nat) {
             var index: Nat = 0;
 
             //If by any chance u are already in top x remove yourself
@@ -59,7 +59,7 @@ module Leaderboard {
             var lowest_found = false;
 
             for (top_user in top_users.vals()) {
-                let top_user_score = get_score(top_user);
+                let top_user_score = getScore(top_user);
 
                 if(lowest_score > top_user_score){
                     lowest_score := top_user_score;
@@ -87,14 +87,14 @@ module Leaderboard {
             }
         };
 
-        public func get_top_users_and_scores() : Buffer.Buffer<Entry> {
+        public func getTopUsersAndScores() : Buffer.Buffer<Entry> {
 
             var top_users_and_scores = Buffer.Buffer<Entry>(top_users.size());
 
             var index = 0;
             let top_users_vals = top_users.vals();
             for (top_user in top_users_vals) {
-                let top_user_score = get_score(top_user);
+                let top_user_score = getScore(top_user);
                 var entry : Entry = { user_principal = top_user; score = top_user_score;};
 
                 top_users_and_scores.add(entry);

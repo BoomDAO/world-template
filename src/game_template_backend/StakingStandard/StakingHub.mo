@@ -58,6 +58,14 @@ actor StakingHub {
     dissolveAt : Int;
     isDissolved : Bool;
   };
+  type Stake = {
+    canister_id : Text;
+    token_type : Text;
+    amount : Nat;
+    index : ?Text;
+    dissolveAt : Int;
+    isDissolved : Bool;
+  };
 
   //Txs block heights
   private stable var icp_txs : Trie.Trie<Text, ICP.Tx> = Trie.empty(); //last 2000 txs of IC Ledger (verified in Payments canister) to prevent spam check in Payments canister
@@ -67,7 +75,7 @@ actor StakingHub {
   private stable var ext_stakes : Trie.Trie<Text, EXTStake> = Trie.empty(); //mapping "(ext_collection_canister_id + / + index)" -> Ext NFT stake user hold
 
   //to update Stakes of ICP/ICRC/EXT tokens
-  private func _update_stakes(_of : Text, _amt : Nat64, _type : Text, token_canister_id : ?Text, nft_index : ?Nat32) : () {
+  private func updateStakes_(_of : Text, _amt : Nat64, _type : Text, token_canister_id : ?Text, nft_index : ?Nat32) : () {
     switch (_type) {
       case ("ICP") {
         switch (Trie.find(icp_stakes, Utils.keyT(_of), Text.equal)) {
@@ -165,7 +173,7 @@ actor StakingHub {
   };
 
   //IC Ledger Canister Query to verify tx height
-  private func query_icp_tx(height : Nat64, _to : Text, _from : Text, _amt : ICP.Tokens) : async (Result.Result<Text, Text>) {
+  private func queryIcpTx_(height : Nat64, _to : Text, _from : Text, _amt : ICP.Tokens) : async (Result.Result<Text, Text>) {
     var req : ICP.GetBlocksArgs = {
       start = height;
       length = 1;
@@ -205,7 +213,7 @@ actor StakingHub {
 
   //ICRC1 Ledger Canister Query to verify ICRC-1 tx index
   //NOTE : Do Not Forget to change token_canister_id to query correct ICRC-1 Ledger
-  private func query_icrc_tx(index : Nat, _to : Text, _from : Text, _amt : Nat) : async (Result.Result<Text, Text>) {
+  private func queryIcrcTx_(index : Nat, _to : Text, _from : Text, _amt : Nat) : async (Result.Result<Text, Text>) {
     let l : Nat = 1;
     var _req : ICRC1.GetTransactionsRequest = {
       start = index;
@@ -246,7 +254,7 @@ actor StakingHub {
   //EXT tx verification checks
   //1. Our StakingHubCanister owns the NFT
   //2. NFT is not already staked by someone else in our NFT vault
-  private func query_ext_tx(collection_canister_id : Text, nft_index : Nat32, _from : Text, _to : Text) : async (Result.Result<Text, Text>) {
+  private func queryExtTx_(collection_canister_id : Text, nft_index : Nat32, _from : Text, _to : Text) : async (Result.Result<Text, Text>) {
     let EXT : Ledger.EXT = actor (collection_canister_id);
     var _registry : [(Nat32, Text)] = await EXT.getRegistry();
     for (i in _registry.vals()) {
@@ -267,7 +275,7 @@ actor StakingHub {
     };
   };
 
-  func _process_withdrawal() : async () {
+  func processWithdrawal_() : async () {
     let delay = 86400000000000; //24hrs in nanoseconds
     //ICP withdrawal processing
     let ICP_Ledger : Ledger.ICP = actor (ENV.Ledger);
@@ -342,13 +350,13 @@ actor StakingHub {
   };
 
   //prevent spam ICP txs and perform action on successfull unique tx
-  public shared (msg) func update_icp_stakes(height : Nat64, _to : Text, _from : Text, _amt : Nat64) : async (ICP.Response) {
+  public shared (msg) func updateIcpStakes(height : Nat64, _to : Text, _from : Text, _amt : Nat64) : async (ICP.Response) {
     assert (Principal.fromText(_from) == msg.caller); //If payment done by correct person and _from arg is passed correctly
     assert (Principal.fromText(_to) == Principal.fromText(ENV.stakinghub_canister_id)); //If payment is done to correct stakinghub_canister
     var amt_ : ICP.Tokens = {
       e8s = _amt;
     };
-    var res : Result.Result<Text, Text> = await query_icp_tx(height, _to, _from, amt_);
+    var res : Result.Result<Text, Text> = await queryIcpTx_(height, _to, _from, amt_);
     if (res == #ok("verified!")) {
       //tx spam check
       var tx : ?ICP.Tx = Trie.find(icp_txs, Utils.keyT(Nat64.toText(height)), Text.equal);
@@ -372,7 +380,7 @@ actor StakingHub {
         icp_txs := Trie.put(icp_txs, Utils.keyT(Nat64.toText(height)), Text.equal, { height = height; to = _to; from = _from; amt = _amt }).0;
       };
       //update stakes of user who did the payment
-      _update_stakes(Principal.toText(msg.caller), _amt, "ICP", null, null);
+      updateStakes_(Principal.toText(msg.caller), _amt, "ICP", null, null);
       return #Success("successfull");
     } else {
       return #Err "invalid tx!";
@@ -380,10 +388,10 @@ actor StakingHub {
   };
 
   //prevent spam ICRC-1 txs and perform action on successfull unique tx
-  public shared (msg) func update_icrc_stakes(index : Nat, _to : Text, _from : Text, _amt : Nat, token_canister_id : Text) : async (ICP.Response) {
+  public shared (msg) func updateIcrcStakes(index : Nat, _to : Text, _from : Text, _amt : Nat, token_canister_id : Text) : async (ICP.Response) {
     assert (Principal.fromText(_from) == msg.caller); //If payment done by correct person and _from arg is passed correctly
     assert (Principal.fromText(_to) == Principal.fromText(ENV.stakinghub_canister_id));
-    var res : Result.Result<Text, Text> = await query_icrc_tx(index, _to, _from, _amt);
+    var res : Result.Result<Text, Text> = await queryIcrcTx_(index, _to, _from, _amt);
     if (res == #ok("verified!")) {
       var _token_txs : Trie.Trie<Text, ICP.Tx_ICRC> = Trie.empty();
       switch (Trie.find(icrc_txs, Utils.keyT(token_canister_id), Text.equal)) {
@@ -414,7 +422,7 @@ actor StakingHub {
         icrc_txs := Trie2D.put(icrc_txs, Utils.keyT(token_canister_id), Text.equal, _token_txs).0;
       };
 
-      _update_stakes(Principal.toText(msg.caller), Nat64.fromNat(_amt), "ICRC", ?token_canister_id, null);
+      updateStakes_(Principal.toText(msg.caller), Nat64.fromNat(_amt), "ICRC", ?token_canister_id, null);
       return #Success("successfull");
     } else {
       return #Err "ledger query failed!";
@@ -422,13 +430,13 @@ actor StakingHub {
   };
 
   //prevent spam ICRC-1 txs and perform action on successfull unique tx
-  public shared (msg) func update_ext_stakes(index : Nat32, _to : Text, _from : Text, collection_canister_id : Text) : async (ICP.Response) {
+  public shared (msg) func updateExtStakes(index : Nat32, _to : Text, _from : Text, collection_canister_id : Text) : async (ICP.Response) {
     assert (Principal.fromText(_from) == msg.caller);
     assert (Principal.fromText(_to) == Principal.fromText(ENV.stakinghub_canister_id));
 
-    switch (await query_ext_tx(collection_canister_id, index, _from, _to)) {
+    switch (await queryExtTx_(collection_canister_id, index, _from, _to)) {
       case (#ok _) {
-        _update_stakes(_from, 1, "EXT", ?collection_canister_id, ?index);
+        updateStakes_(_from, 1, "EXT", ?collection_canister_id, ?index);
         return #Success("successfull");
       };
       case (#err e) {
@@ -437,7 +445,7 @@ actor StakingHub {
     };
   };
 
-  public shared (msg) func dissolve_icp() : async (Result.Result<Text, Text>) {
+  public shared (msg) func dissolveIcp() : async (Result.Result<Text, Text>) {
     let _of : Text = Principal.toText(msg.caller);
     switch (Trie.find(icp_stakes, Utils.keyT(_of), Text.equal)) {
       case (?s) {
@@ -459,7 +467,7 @@ actor StakingHub {
     };
   };
 
-  public shared (msg) func dissolve_icrc(token_canister_id : Text) : async (Result.Result<Text, Text>) {
+  public shared (msg) func dissolveIcrc(token_canister_id : Text) : async (Result.Result<Text, Text>) {
     let _of : Text = Principal.toText(msg.caller);
     switch (Trie.find(icrc_stakes, Utils.keyT(_of), Text.equal)) {
       case (?_trie) {
@@ -490,7 +498,7 @@ actor StakingHub {
     };
   };
 
-  public shared (msg) func dissolve_ext(collection_canister_id : Text, index : Nat32) : async (Result.Result<Text, Text>) {
+  public shared (msg) func dissolveExt(collection_canister_id : Text, index : Nat32) : async (Result.Result<Text, Text>) {
     let _of : Text = Principal.toText(msg.caller);
     let key : Text = collection_canister_id # "/" #Nat32.toText(index);
     switch (Trie.find(ext_stakes, Utils.keyT(key), Text.equal)) {
@@ -518,12 +526,63 @@ actor StakingHub {
   };
 
   //cron jobs for automatic withdrawals of ICP/ICRC-1/EXT tokens
-  let period : Timer.Duration = #seconds (24 * 60 * 60); //duration set to 24hrs
-  let cron = Timer.recurringTimer(period, _process_withdrawal);
+  let period : Timer.Duration = #seconds(24 * 60 * 60); //duration set to 24hrs
+  let cron = Timer.recurringTimer(period, processWithdrawal_);
 
-  public shared (msg) func kill_cron() : async () {
-    assert(Principal.toText(msg.caller) == ENV.StakingHubAdmin);
+  public shared (msg) func killCron() : async () {
+    assert (Principal.toText(msg.caller) == ENV.StakingHubAdmin);
     Timer.cancelTimer(cron);
-  } ;
-  
+  };
+
+  //User Queries
+  public query func getUserStakes(user_id : Text) : async ([Stake]) {
+    var b : Buffer.Buffer<Stake> = Buffer.Buffer<Stake>(0);
+    //put icp stakes
+    switch (Trie.find(icp_stakes, Utils.keyT(user_id), Text.equal)) {
+      case (?s) {
+        b.add({
+          canister_id = ENV.Ledger;
+          token_type = "ICP";
+          amount = Nat64.toNat(s.amount);
+          index = null;
+          dissolveAt = s.dissolveAt;
+          isDissolved = s.isDissolved;
+        });
+      };
+      case _ {};
+    };
+
+    //put icrc-1 tokens stakes
+    switch (Trie.find(icrc_stakes, Utils.keyT(user_id), Text.equal)) {
+      case (?_trie) {
+        for ((id, s) in Trie.iter(_trie)) {
+          b.add({
+            canister_id = id;
+            token_type = "ICRC";
+            amount = s.amount;
+            index = null;
+            dissolveAt = s.dissolveAt;
+            isDissolved = s.isDissolved;
+          });
+        };
+      };
+      case _ {};
+    };
+
+    //for ext stakes
+    for ((id, s) in Trie.iter(ext_stakes)) {
+      if (s.staker == user_id) {
+        let path = Iter.toArray(Text.tokens(id, #text("/")));
+        b.add({
+          canister_id = path[0];
+          token_type = "EXT";
+          amount = 1;
+          index = ?path[1];
+          dissolveAt = s.dissolveAt;
+          isDissolved = s.isDissolved;
+        });
+      };
+    };
+    return Buffer.toArray(b);
+  };
 };

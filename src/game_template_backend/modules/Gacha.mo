@@ -10,6 +10,7 @@ import Option "mo:base/Option";
 import JSON "../utils/Json";
 import RandomUtil "../utils/RandomUtil";
 import Utils "../utils/Utils";
+import TUsers "../DatabaseStandard/Types";
 
 module Gacha {
 
@@ -18,14 +19,14 @@ module Gacha {
         quantity : Float; // if > 0 is add and if < 0 is subs
     };
 
-    public func gen_gacha_variables(gacha_id : Text, gachas_json : Text) : async (Result.Result<[RewardData], Text>) {
+    public func genGachaVariables(gacha_id : Text, gachas_json : Text) : async (Result.Result<[RewardData], Text>) {
         var rolls_text = "";
         switch (JSON.find_arr_element_by_itemId(gacha_id, "gachas", gachas_json)) {
             case (#ok(k)) {
                 rolls_text := JSON.get_key(k, "rolls");
             };
             case (#err(errMsg)) {
-                return #err("Err00: " #errMsg# "  " #gacha_id);
+                return #err("Err00:: " #errMsg# "  " #gacha_id);
             };
         };
         rolls_text := Option.get(Text.stripStart(rolls_text, #char '{'), "");
@@ -65,10 +66,7 @@ module Gacha {
                                                 var weight = Utils.textToFloat(weight_text);
                                                 if (weight >= dice_roll) {
                                                     var itemId_text = JSON.get_key(JSON.show(variable), "itemId");
-                                                    itemId_text := Option.get(Text.stripStart(itemId_text, #char '{'), "");
-                                                    itemId_text := Option.get(Text.stripStart(itemId_text, #char '\"'), "");
-                                                    itemId_text := Option.get(Text.stripEnd(itemId_text, #char '}'), "");
-                                                    itemId_text := Option.get(Text.stripEnd(itemId_text, #char '\"'), "");
+                                                    itemId_text := JSON.strip(itemId_text, '{', '}');
                                                     
                                                     let quantity_text = JSON.get_key(JSON.show(variable), "quantity");
                                                     var quantity : Float = Utils.textToFloat(quantity_text);
@@ -107,4 +105,39 @@ module Gacha {
 
         return #ok(Buffer.toArray(gacha_output));
     };
+
+    public func generateGachaReward_(gacha_id : Text, gachasConfigJson : Text) : async (Result.Result<TUsers.CoreTxData, Text>) {
+        var gacha_response = await Gacha.genGachaVariables(gacha_id, gachasConfigJson);
+        let items_add = Buffer.Buffer<TUsers.Item>(0);
+        let items_remove = Buffer.Buffer<TUsers.Item>(0);
+        switch (gacha_response) {
+            case (#ok(gacha_variables)) {
+                for (gacha_variable in gacha_variables.vals()) {
+                    if (gacha_variable.quantity > 0) {
+                        items_add.add(gacha_variable);
+                    } else {
+                        var item_setting : TUsers.Item = {
+                            id = gacha_variable.id;
+                            quantity = gacha_variable.quantity;
+                        };
+                        items_remove.add(gacha_variable);
+                    };
+                };
+
+                let coreTxData : TUsers.CoreTxData = {
+                    items = ?{
+                        add = ?Buffer.toArray(items_add);
+                        remove = ?Buffer.toArray(items_remove);
+                    };
+                    profile = null;
+                    bought_offers = null;
+                };
+                return #ok(coreTxData);
+            };
+            case (#err(msg)) {
+                return #err(msg);
+            };
+        };
+    };
+
 };

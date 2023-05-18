@@ -54,7 +54,7 @@ actor Core {
     private var _configs = Configs.Configs(remote_configs); 
 
     //Internals Functions
-    private func count_users(can_id : Text) : (Nat32) {
+    private func countUsers_(can_id : Text) : (Nat32) {
         var count : Nat32 = 0;
         for ((uid, canister) in Trie.iter(_uids)) {
             if (canister == can_id) {
@@ -64,7 +64,7 @@ actor Core {
         return count;
     };
 
-    private func _add_text(arr : [Text], id : Text) : ([Text]) {
+    private func addText_(arr : [Text], id : Text) : ([Text]) {
         var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
         for (i in arr.vals()) {
             b.add(i);
@@ -73,7 +73,7 @@ actor Core {
         return Buffer.toArray(b);
     };
 
-    private func updateCanister(a : actor {}) : async () {
+    private func updateCanister_(a : actor {}) : async () {
         let cid = { canister_id = Principal.fromActor(a) };
         var p : Buffer.Buffer<Principal> = Buffer.Buffer<Principal>(0);
         for (i in ENV.admins.vals()) {
@@ -93,15 +93,15 @@ actor Core {
         );
     };
 
-    private func create_canister() : async (Text) {
+    private func createCanister_() : async (Text) {
         Cycles.add(2000000000000);
         let canister = await Users.Users();
-        let _ = await updateCanister(canister); // update canister permissions and settings
+        let _ = await updateCanister_(canister); // update canister permissions and settings
         let canister_id = Principal.fromActor(canister);
         return Principal.toText(canister_id);
     };
 
-    private func _isAdmin(_p : Principal) : (Bool) {
+    private func isAdmin_(_p : Principal) : (Bool) {
         var p : Text = Principal.toText(_p);
         for (i in _admins.vals()) {
             if (p == i) {
@@ -121,7 +121,7 @@ actor Core {
         return Trie.size(_uids);
     };
 
-    public query func get_user_canisterid(_uid : Text) : async (Result.Result<Text, Text>) {
+    public query func getUserCanisterId(_uid : Text) : async (Result.Result<Text, Text>) {
         switch (Trie.find(_uids, Utils.keyT(_uid), Text.equal)) {
             case (?c) {
                 return #ok(c);
@@ -132,24 +132,24 @@ actor Core {
         };
     };
 
-    public query func get_all_ucanisters() : async [Text] {
+    public query func getAllUcanisters() : async [Text] {
         return _ucanisters;
     };
 
-    public query func get_all_admins() : async [Text] {
+    public query func getAllAdmins() : async [Text] {
         return _admins;
     };
 
     //Updates
-    public shared ({ caller }) func add_admin(p : Text) : async () {
-        assert (_isAdmin(caller));
+    public shared ({ caller }) func addAdmin(p : Text) : async () {
+        assert (isAdmin_(caller));
         var b : Buffer.Buffer<Text> = Buffer.fromArray(_admins);
         b.add(p);
         _admins := Buffer.toArray(b);
     };
 
-    public shared ({ caller }) func remove_admin(p : Text) : async () {
-        assert (_isAdmin(caller));
+    public shared ({ caller }) func removeAdmin(p : Text) : async () {
+        assert (isAdmin_(caller));
         var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
         for (i in _admins.vals()) {
             if (i != p) {
@@ -159,16 +159,16 @@ actor Core {
         _admins := Buffer.toArray(b);
     };
 
-    public shared ({ caller }) func create_new_user() : async (Result.Result<Text, Text>) {
+    public shared ({ caller }) func createNewUser() : async (Result.Result<Text, Text>) {
         var _uid : Text = Principal.toText(caller);
-        switch (await get_user_canisterid(_uid)) {
+        switch (await getUserCanisterId(_uid)) {
             case (#ok o) {
                 return #err("user already exist");
             };
             case (#err e) {
                 var canister_id : Text = "";
                 label _check for (can_id in _ucanisters.vals()) {
-                    var size : Nat32 = count_users(can_id);
+                    var size : Nat32 = countUsers_(can_id);
                     if (size < 1000) {
                         canister_id := can_id;
                         _uids := Trie.put(_uids, Utils.keyT(_uid), Text.equal, canister_id).0;
@@ -176,8 +176,8 @@ actor Core {
                     };
                 };
                 if (canister_id == "") {
-                    canister_id := await create_canister();
-                    _ucanisters := _add_text(_ucanisters, canister_id);
+                    canister_id := await createCanister_();
+                    _ucanisters := addText_(_ucanisters, canister_id);
                     _uids := Trie.put(_uids, Utils.keyT(_uid), Text.equal, canister_id).0;
                 };
                 let db = actor (canister_id) : actor {
@@ -190,25 +190,25 @@ actor Core {
     };
 
     //Remote_Configs of Core Canister
-    public shared ({ caller }) func create_config(name : Text, json : Text) : async (Result.Result<Text, Text>) {
-        await _configs.create_config(name, json);
+    public shared ({ caller }) func createConfig(name : Text, json : Text) : async (Result.Result<Text, Text>) {
+        await _configs.createConfig(name, json);
     };
 
-    public shared ({ caller }) func get_config(name : Text) : async (Text) {
-        await _configs.get_config(name);
+    public shared ({ caller }) func getConfig(name : Text) : async (Text) {
+        await _configs.getConfig(name);
     };
 
-    public shared ({ caller }) func update_config(name : Text, json : Text) : async (Result.Result<Text, Text>) {
-        await _configs.update_config(name, json);
+    public shared ({ caller }) func updateConfig(name : Text, json : Text) : async (Result.Result<Text, Text>) {
+        await _configs.updateConfig(name, json);
     };
 
-    public shared ({ caller }) func delete_config(name : Text) : async (Result.Result<Text, Text>) {
-        await _configs.delete_config(name);
+    public shared ({ caller }) func deleteConfig(name : Text) : async (Result.Result<Text, Text>) {
+        await _configs.deleteConfig(name);
     };
 
     //admin only endpoints
     public shared ({ caller }) func admin_executeGameTx(_uid : Text, _gid : Text, t : TUsers.GameTxData) : async (Result.Result<Text, Text>) {
-        assert (_isAdmin(caller)); //only admin can update GameData of user
+        assert (isAdmin_(caller)); //only admin can update GameData of user
         switch (Trie.find(_uids, Utils.keyT(_uid), Text.equal)) {
             case (?canister_id) {
                 let db = actor (canister_id) : actor {
@@ -224,7 +224,7 @@ actor Core {
     };
 
     public shared ({ caller }) func admin_executeCoreTx(_uid : Text, t : TUsers.CoreTxData) : async (Result.Result<Text, Text>) {
-        assert (_isAdmin(caller)); //only admin can update GameData of user
+        assert (isAdmin_(caller)); //only admin can update GameData of user
         switch (Trie.find(_uids, Utils.keyT(_uid), Text.equal)) {
             case (?canister_id) {
                 let db = actor (canister_id) : actor {
@@ -240,15 +240,15 @@ actor Core {
     };
 
     public shared ({ caller }) func admin_create_user(_uid : Text) : async (Result.Result<Text, Text>) {
-        assert (_isAdmin(caller));
-        switch (await get_user_canisterid(_uid)) {
+        assert (isAdmin_(caller));
+        switch (await getUserCanisterId(_uid)) {
             case (#ok o) {
                 return #err("user already exist");
             };
             case (#err e) {
                 var canister_id : Text = "";
                 label _check for (can_id in _ucanisters.vals()) {
-                    var size : Nat32 = count_users(can_id);
+                    var size : Nat32 = countUsers_(can_id);
                     if (size < 1000) {
                         canister_id := can_id;
                         _uids := Trie.put(_uids, Utils.keyT(_uid), Text.equal, canister_id).0;
@@ -256,8 +256,8 @@ actor Core {
                     };
                 };
                 if (canister_id == "") {
-                    canister_id := await create_canister();
-                    _ucanisters := _add_text(_ucanisters, canister_id);
+                    canister_id := await createCanister_();
+                    _ucanisters := addText_(_ucanisters, canister_id);
                     _uids := Trie.put(_uids, Utils.keyT(_uid), Text.equal, canister_id).0;
                 };
                 let db = actor (canister_id) : actor {
@@ -270,7 +270,7 @@ actor Core {
     };
 
     public shared ({ caller }) func admin_delete_user(uid : Text) : async () {
-        assert (_isAdmin(caller));
+        assert (isAdmin_(caller));
         _uids := Trie.remove(_uids, Utils.keyT(uid), Text.equal).0;
         return ();
     };

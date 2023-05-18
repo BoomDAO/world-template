@@ -36,7 +36,7 @@ module {
     public class Configs(_configs : Trie.Trie<Text, JSON.JSON>) {
         public var remote_configs : Trie.Trie<Text, JSON.JSON> = _configs;
         //CRUD
-        public func create_config(name : Text, json : Text) : async (Result.Result<Text, Text>) {
+        public func createConfig(name : Text, json : Text) : async (Result.Result<Text, Text>) {
             switch (JSON.parse(json)) {
                 case (?j) {
                     remote_configs := Trie.put(remote_configs, Utils.keyT(name), Text.equal, j).0;
@@ -48,7 +48,7 @@ module {
             };
         };
 
-        public func update_config(name : Text, json : Text) : async (Result.Result<Text, Text>) {
+        public func updateConfig(name : Text, json : Text) : async (Result.Result<Text, Text>) {
             switch (Trie.find(remote_configs, Utils.keyT(name), Text.equal)) {
                 case (?_) {
                     switch (JSON.parse(json)) {
@@ -69,7 +69,7 @@ module {
             };
         };
 
-        public func get_config(name : Text) : async (Text) {
+        public func getConfig(name : Text) : async (Text) {
             switch (Trie.find(remote_configs, Utils.keyT(name), Text.equal)) {
                 case (?j) {
                     return JSON.show(j);
@@ -80,7 +80,7 @@ module {
             };
         };
 
-        public func delete_config(name : Text) : async (Result.Result<Text, Text>) {
+        public func deleteConfig(name : Text) : async (Result.Result<Text, Text>) {
             switch (Trie.find(remote_configs, Utils.keyT(name), Text.equal)) {
                 case (?_) {
                     remote_configs := Trie.remove(remote_configs, Utils.keyT(name), Text.equal).0;

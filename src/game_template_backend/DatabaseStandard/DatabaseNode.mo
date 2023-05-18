@@ -44,7 +44,7 @@ actor class Users() {
   //Internal functions
   //
   //validating Game Canister as caller
-  private func _isGame(_p : Principal) : (Bool) {
+  private func isGame_(_p : Principal) : (Bool) {
     var p : Text = Principal.toText(_p);
     for (i in _games.vals()) {
       if (p == i) {
@@ -54,7 +54,7 @@ actor class Users() {
     return false;
   };
   //validating Core Canister as caller
-  private func _isCore(p : Principal) : (Bool) {
+  private func isCore_(p : Principal) : (Bool) {
     let _p : Text = Principal.toText(p);
     if (_p == ENV.core) {
       return true;
@@ -63,7 +63,7 @@ actor class Users() {
   };
 
   //to update Game Data of users
-  private func _executeGameTx(_uid : Text, _gid : Text, t : Types.GameTxData) : async () {
+  private func executeGameTx_(_uid : Text, _gid : Text, t : Types.GameTxData) : async () {
     switch (Trie.find(_usersGame, Utils.keyT(_uid), Text.equal)) {
       case (?g) {
         switch (Trie.find(g, Utils.keyT(_gid), Text.equal)) {
@@ -244,7 +244,7 @@ actor class Users() {
               achievements = Trie.empty();
             };
             _usersGame := Trie.put2D(_usersGame, Utils.keyT(_uid), Text.equal, Utils.keyT(_gid), Text.equal, new_game_data);
-            await _executeGameTx(_uid, _gid, t);
+            await executeGameTx_(_uid, _gid, t);
           };
         };
       };
@@ -253,7 +253,7 @@ actor class Users() {
   };
 
   //to update Core Data of users
-  private func _executeCoreTx(_uid : Text, t : Types.CoreTxData) : async () {
+  private func executeCoreTx_(_uid : Text, t : Types.CoreTxData) : async () {
     switch (Trie.find(_usersCore, Utils.keyT(_uid), Text.equal)) {
       case (?cd) {
         var _profile : Types.Profile = cd.profile;
@@ -351,20 +351,20 @@ actor class Users() {
   //Execute Transaction
   //
   public shared ({ caller }) func executeGameTx(_uid : Text, t : Types.GameTxData) : async () {
-    assert (_isGame(caller)); //only game canister can update GameData of user
+    assert (isGame_(caller)); //only game canister can update GameData of user
     var _gid : Text = Principal.toText(caller);
-    await _executeGameTx(_uid, _gid, t);
+    await executeGameTx_(_uid, _gid, t);
   };
 
   public shared ({ caller }) func executeCoreTx(_uid : Text, t : Types.CoreTxData) : async () {
-    assert (_isCore(caller)); //only core canister can update CoreData of user
-    await _executeCoreTx(_uid, t);
+    assert (isCore_(caller)); //only core canister can update CoreData of user
+    await executeCoreTx_(_uid, t);
   };
 
   //Profile update
   //
-  public shared ({ caller }) func _setUsername(_uid : Text, _name : Text) : async (Text) {
-    assert (_isCore(caller));
+  public shared ({ caller }) func setUsername(_uid : Text, _name : Text) : async (Text) {
+    assert (isCore_(caller));
     switch (Trie.find(_usersCore, Utils.keyT(_uid), Text.equal)) {
       case (?d) {
         var cd : Types.CoreData = {
@@ -387,8 +387,8 @@ actor class Users() {
 
   //CRUD
   //
-  public shared ({ caller }) func admin_create_user(_uid : Text) : async () {
-    assert (_isCore(caller));
+  public shared ({ caller }) func adminCreateUser(_uid : Text) : async () {
+    assert (isCore_(caller));
     var cd : Types.CoreData = {
       profile = {
         name = "";
@@ -409,11 +409,11 @@ actor class Users() {
     Cycles.balance();
   };
 
-  public query func total_users() : async (Nat) {
+  public query func totalUsers() : async (Nat) {
     return Trie.size(_usersGame);
   };
 
-  public query func get_all_uids() : async [Text] {
+  public query func getAllUids() : async [Text] {
     var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
     for ((i, v) in Trie.iter(_usersGame)) {
       b.add(i);
@@ -421,7 +421,7 @@ actor class Users() {
     return Buffer.toArray(b);
   };
 
-  public query func get_user_gameData(uid : Text) : async Result.Result<[(Text, Types.ArrayGameData)], Text> {
+  public query func getUserGameData(uid : Text) : async Result.Result<[(Text, Types.ArrayGameData)], Text> {
     switch (Trie.find(_usersGame, Utils.keyT(uid), Text.equal)) {
       case (?u) {
         var b : Buffer.Buffer<(Text, Types.ArrayGameData)> = Buffer.Buffer<(Text, Types.ArrayGameData)>(0);
@@ -447,7 +447,7 @@ actor class Users() {
     };
   };
 
-  public query func get_user_coreData(uid : Text) : async Result.Result<Types.ArrayCoreData, Text> {
+  public query func getUserCoreData(uid : Text) : async Result.Result<Types.ArrayCoreData, Text> {
     switch (Trie.find(_usersCore, Utils.keyT(uid), Text.equal)) {
       case (?u) {
         var _items : Buffer.Buffer<(Text, Types.Item)> = Buffer.Buffer<(Text, Types.Item)>(0);
@@ -467,7 +467,7 @@ actor class Users() {
     };
   };
 
-  public query func get_user_game(uid : Text, gid : Text) : async Result.Result<Types.ArrayGameData, Text> {
+  public query func getUserGame(uid : Text, gid : Text) : async Result.Result<Types.ArrayGameData, Text> {
     switch (Trie.find(_usersGame, Utils.keyT(uid), Text.equal)) {
       case (?u) {
         switch (Trie.find(u, Utils.keyT(gid), Text.equal)) {
@@ -497,14 +497,14 @@ actor class Users() {
   };
 
   //update new Games canister_ids for validation
-  public shared ({ caller }) func add_game(g : Text) : async () {
-    assert (_isCore(caller));
+  public shared ({ caller }) func addGame(g : Text) : async () {
+    assert (isCore_(caller));
     var b : Buffer.Buffer<Text> = Buffer.fromArray(_games);
     b.add(g);
     _games := Buffer.toArray(b);
   };
-  public shared ({ caller }) func remove_game(g : Text) : async () {
-    assert (_isCore(caller));
+  public shared ({ caller }) func removeGame(g : Text) : async () {
+    assert (isCore_(caller));
     var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
     for (i in _games.vals()) {
       if (i != g) {
@@ -516,7 +516,7 @@ actor class Users() {
 
   //filters
   //
-  public query func filter_by_game_key_value(
+  public query func filterByGameKeyValue(
     _gid : Text,
     _key : Text,
     _val : {
