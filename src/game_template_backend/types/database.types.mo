@@ -44,15 +44,30 @@ module {
 
     public type Buff = {
         id : Text;
-        usage : Text;
-        endTs : Int;
+        quantity : Float;
+        ts : Int;
     };
 
     public type Achievement = {
         id : Text;
         quantity : Float;
-        firstTs : Int;
-        endTs : Int;
+        ts : Int;
+    };
+
+    public type Raw = {
+        id : Text;
+        type_ : Text;
+        raw: Text;
+    };
+
+    public type Nft = {
+        id : Text;
+        quantity : Float;
+        canister : Text;
+        assetId : Text;
+        collection : Text;
+        standard : Text;
+        metaData : Text;
     };
 
     public type Profile = {

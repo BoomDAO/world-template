@@ -71,35 +71,41 @@ module JSON {
         };
     };
 
-    public func get_value(jsonEntry : Text) : (Text){
-        var unwrapped = strip(jsonEntry, '{', '}');
-        var charsIter = unwrapped.chars();
-        var value = "";
-        var startAdding : Bool = false;
-
-        for(x in charsIter){
-            if(startAdding == false){
-                if(x == ':'){
-                    startAdding := true;
-                };
-            }
-            else{
-                value := value #  Char.toText(x) ;
-            };
-        };
-
-        return strip(value,'\"', '\"');// strip(keyValue[1], '\"', '\"');
+    public func get_unwrapped_key(data : Text, _key : Text) : (Text){
+        return JSON.strip(get_key(data, _key),'{','}');
     };
 
-    public func get_element_by_field_value(json_arr : Text, arr_e_field_name : Text, arr_e_field_val : Text) : (Result.Result<Text, Text>){
-        switch (JSON.parse(json_arr)){
+    public func get_typed_array(json : Text, array_name : Text) : ([JSON.JSON]){
+        let jsonArray = JSON.get_key(json, array_name);
+        
+        let unwrappedJsonArray = JSON.get_unwrapped_key(json, array_name);
+
+        if(jsonArray == "not found") return [];
+
+        return switch (JSON.parse(unwrappedJsonArray)){
+            case(? parsedUnwrappedJsonArray){
+                switch(parsedUnwrappedJsonArray){
+                    case(#Array(array)){ return array; };
+                    case (_){ []; };
+                };
+            };
+            case (_){ []; };
+        
+        } 
+    };
+
+    public func get_element_by_field_value(json : Text, array_name : Text, field_to_inspect_name : Text, field_to_inspect_value : Text) : (Result.Result<Text, Text>){
+        var strjson_arr : Text = get_key(json, array_name);
+        strjson_arr := JSON.strip(strjson_arr,'{','}');
+        switch (JSON.parse(strjson_arr)){
             case (?j){
                 switch (j){
                     case (#Array(v)){
                         for(i in v.vals()){
                             var tt : Text = show(i);
-                            var _itemId : Text = get_key(tt, arr_e_field_name);
-                            if(_itemId == arr_e_field_val){
+                            var _itemId : Text = JSON.strip(get_key(tt, field_to_inspect_name),'{','}');
+                            // return #err("Test Error: field name " # field_to_inspect_name # ", field value " # field_to_inspect_value # " == "#_itemId);
+                            if(_itemId == field_to_inspect_value){
                                 return #ok(show(i));
                             }
                         };
@@ -113,13 +119,7 @@ module JSON {
             };
         };
     };
-    public func find_arr_element_by_itemId(gacha_id : Text, arr_name : Text, json_arr : Text) : Result.Result<Text, Text> {
-        var strjson_arr : Text = get_key(json_arr, arr_name);
-        strjson_arr := Option.get(Text.stripStart(strjson_arr, #char '{'), "");
-        strjson_arr := Option.get(Text.stripEnd(strjson_arr, #char '}'), "");
-        let json_arr_element : Result.Result<Text, Text> = get_element_by_field_value(strjson_arr, "itemId", gacha_id);
-        return json_arr_element;
-    };
+    
     public func update_key(json : JSON, _key : Text, _val : Text) : Text = switch (json) {
         case (#Number(v)) { Int.toText(v); };
         case (#Float(v)) { Float.format(#fix(2), v); };
@@ -377,7 +377,7 @@ module JSON {
         case (#Number(v)) { Int.toText(v); };
         case (#Float(v)) { Float.format(#fix(2), v); };
         case (#String(v)) { 
-            return strip("\"" # v # "\"", '\"', '\"');
+            return "" # v # "";
          };
         case (#Array(v)) {
             var s = "[";

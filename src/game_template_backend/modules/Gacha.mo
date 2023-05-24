@@ -11,28 +11,28 @@ import JSON "../utils/Json";
 import RandomUtil "../utils/RandomUtil";
 import Utils "../utils/Utils";
 import TUsers "../DatabaseStandard/Types";
+import Int "mo:base/Int";
 
 module Gacha {
 
-    public type RewardData = {
+    public type ItemData = {
         id : Text;
         quantity : Float; // if > 0 is add and if < 0 is subs
     };
 
-    public func genGachaVariables(gacha_id : Text, gachas_json : Text) : async (Result.Result<[RewardData], Text>) {
+    public func generateGachaReward(gachaId : Text, gachasConfigJson : Text) : async (Result.Result<[ItemData], Text>) {
         var rolls_text = "";
-        switch (JSON.find_arr_element_by_itemId(gacha_id, "gachas", gachas_json)) {
+        switch (JSON.get_element_by_field_value(gachasConfigJson, "gachas", "Id", gachaId)) {
             case (#ok(k)) {
                 rolls_text := JSON.get_key(k, "rolls");
             };
             case (#err(errMsg)) {
-                return #err("Err00:: " #errMsg# "  " #gacha_id);
+                return #err("Err00:: " #errMsg# " _ " #gachaId);
             };
         };
-        rolls_text := Option.get(Text.stripStart(rolls_text, #char '{'), "");
-        rolls_text := Option.get(Text.stripEnd(rolls_text, #char '}'), "");
+        rolls_text := JSON.strip(rolls_text,'{','}');
 
-        var gacha_output = Buffer.Buffer<RewardData>(0);
+        var gacha_output = Buffer.Buffer<ItemData>(0);
         switch (JSON.parse(rolls_text)) {
             //ROLLS
             case (?rolls_json) {
@@ -71,7 +71,7 @@ module Gacha {
                                                     let quantity_text = JSON.get_key(JSON.show(variable), "quantity");
                                                     var quantity : Float = Utils.textToFloat(quantity_text);
 
-                                                    let reward : RewardData = {
+                                                    let reward : ItemData = {
                                                         id = itemId_text;
                                                         quantity = quantity;
                                                     };
@@ -106,38 +106,169 @@ module Gacha {
         return #ok(Buffer.toArray(gacha_output));
     };
 
-    public func generateGachaReward_(gacha_id : Text, gachasConfigJson : Text) : async (Result.Result<TUsers.CoreTxData, Text>) {
-        var gacha_response = await Gacha.genGachaVariables(gacha_id, gachasConfigJson);
-        let items_add = Buffer.Buffer<TUsers.Item>(0);
-        let items_remove = Buffer.Buffer<TUsers.Item>(0);
-        switch (gacha_response) {
-            case (#ok(gacha_variables)) {
-                for (gacha_variable in gacha_variables.vals()) {
-                    if (gacha_variable.quantity > 0) {
-                        items_add.add(gacha_variable);
-                    } else {
-                        var item_setting : TUsers.Item = {
-                            id = gacha_variable.id;
-                            quantity = gacha_variable.quantity;
-                        };
-                        items_remove.add(gacha_variable);
-                    };
-                };
+    public func setupGameTxData(gachaOutput : [ItemData], itemsConfig : Text) : (gameTx : TUsers.GameTxData , nfts : [TUsers.Nft]) {
+        let itemsConfigArray = JSON.get_typed_array(itemsConfig, "items");
+        let buffsConfigArray = JSON.get_typed_array(itemsConfig, "buffs");
+        let nftsConfigArray = JSON.get_typed_array(itemsConfig, "nts");
 
-                let coreTxData : TUsers.CoreTxData = {
-                    items = ?{
-                        add = ?Buffer.toArray(items_add);
-                        remove = ?Buffer.toArray(items_remove);
-                    };
-                    profile = null;
-                    bought_offers = null;
+        let items = Buffer.Buffer<TUsers.Item>(0);
+        let buffs = Buffer.Buffer<TUsers.Buff>(0);
+        let nfts = Buffer.Buffer<TUsers.Nft>(0);
+
+        label gachaVariableLoop for(gachaVariable in gachaOutput.vals()){
+            //items
+            for(config in itemsConfigArray.vals()){
+                let configId = JSON.get_unwrapped_key(JSON.show(config), "itemId");
+                if(configId == gachaVariable.id){
+                    items.add(gachaVariable);
+                    continue gachaVariableLoop;
                 };
-                return #ok(coreTxData);
             };
-            case (#err(msg)) {
-                return #err(msg);
+            //buffs
+            for(config in buffsConfigArray.vals()){
+                let configId = JSON.get_unwrapped_key(JSON.show(config), "itemId");
+                if(configId == gachaVariable.id){
+                    let durationStr = JSON.get_unwrapped_key(JSON.show(config), "duration");
+                    let duration = Utils.textToFloat(durationStr);
+                    let floatEndTs = duration * 1_000_000_000;
+
+                    buffs.add({
+                        id = gachaVariable.id;
+                        quantity = gachaVariable.quantity;
+                        ts = Utils.textToNat(Int.toText(Float.toInt(floatEndTs)));
+                    });
+                    continue gachaVariableLoop;
+                };
+            };
+            //nfts
+            for(config in nftsConfigArray.vals()){
+                let configId = JSON.get_unwrapped_key(JSON.show(config), "itemId");
+                if(configId == gachaVariable.id){
+                    let canister = JSON.get_unwrapped_key(JSON.show(config), "canister");
+                    let assetId = JSON.get_unwrapped_key(JSON.show(config), "assetId");
+                    let collection = JSON.get_unwrapped_key(JSON.show(config), "collection");
+                    let standard = JSON.get_unwrapped_key(JSON.show(config), "standard");
+                    let metaData = JSON.get_unwrapped_key(JSON.show(config), "metaData");
+
+                    nfts.add({
+                        id = gachaVariable.id;
+                        quantity = gachaVariable.quantity;
+
+                        canister;
+                        assetId;
+                        collection;
+                        standard;
+                        metaData;
+                    });
+                    continue gachaVariableLoop;
+                };
             };
         };
-    };
 
+        let gameTxData : TUsers.GameTxData = {
+                    achievements = null;
+                    items = ?{
+                        add = ?Buffer.toArray(items);
+                        remove = null;
+                    };
+                    buffs = ?{
+                        add = ?Buffer.toArray(buffs);
+                        remove = null;
+                    };
+                };
+
+        return (gameTxData, Buffer.toArray(nfts));
+    };
+    public func setupGameTxData_(gachaOutput : [ItemData], itemsConfig : Text) : (gameTx : TUsers.GameTxData , nfts : [TUsers.Nft], Text) {
+        let itemsConfigArray = JSON.get_typed_array(itemsConfig, "items");
+        let buffsConfigArray = JSON.get_typed_array(itemsConfig, "buffs");
+        let nftsConfigArray = JSON.get_typed_array(itemsConfig, "nts");
+
+        let items = Buffer.Buffer<TUsers.Item>(0);
+        let buffs = Buffer.Buffer<TUsers.Buff>(0);
+        let nfts = Buffer.Buffer<TUsers.Nft>(0);
+        
+        var v = "> ";
+        var a = JSON.show(#Array(itemsConfigArray));
+        label gachaVariableLoop for(gachaVariable in gachaOutput.vals()){
+            // v := v # ", " # gachaVariable.id;
+            v := v # ", id: " # gachaVariable.id;
+
+            v := v # " (";
+            //items
+            for(config in itemsConfigArray.vals()){
+                let configId = JSON.get_unwrapped_key(JSON.show(config), "itemId");
+                v := v # " [ Item" # configId # " ]";
+                if(configId == gachaVariable.id){
+                    items.add(gachaVariable);
+                    
+                    continue gachaVariableLoop;
+                };
+            };
+            
+            //buffs
+            for(config in buffsConfigArray.vals()){
+                let configId = JSON.get_unwrapped_key(JSON.show(config), "itemId");
+                v := v # " [ buff" # configId # " ]";
+                if(configId == gachaVariable.id){
+                    let durationStr = JSON.get_unwrapped_key(JSON.show(config), "duration");
+                    let duration = Utils.textToFloat(durationStr);
+                    let floatEndTs = duration * 1_000_000_000;
+
+                    buffs.add({
+                        id = gachaVariable.id;
+                        quantity = gachaVariable.quantity;
+                        ts = Utils.textToNat(Int.toText(Float.toInt(floatEndTs)));
+                    });
+
+                    
+
+                    continue gachaVariableLoop;
+                };
+            };
+            //nfts
+            for(config in nftsConfigArray.vals()){
+                let configId = JSON.get_unwrapped_key(JSON.show(config), "itemId");
+                v := v # " [ nft" # configId # " ]";
+                if(configId == gachaVariable.id){
+                    let canister = JSON.get_unwrapped_key(JSON.show(config), "canister");
+                    let assetId = JSON.get_unwrapped_key(JSON.show(config), "assetId");
+                    let collection = JSON.get_unwrapped_key(JSON.show(config), "collection");
+                    let standard = JSON.get_unwrapped_key(JSON.show(config), "standard");
+                    let metaData = JSON.get_unwrapped_key(JSON.show(config), "metaData");
+
+                    nfts.add({
+                        id = gachaVariable.id;
+                        quantity = gachaVariable.quantity;
+
+                        canister;
+                        assetId;
+                        collection;
+                        standard;
+                        metaData;
+                    });
+
+                    v := v # ", nft: " # gachaVariable.id;
+
+                    continue gachaVariableLoop;
+                };
+            };
+
+                        v := v # ") ";
+        };
+
+        let gameTxData : TUsers.GameTxData = {
+                    achievements = null;
+                    items = ?{
+                        add = ?Buffer.toArray(items);
+                        remove = null;
+                    };
+                    buffs = ?{
+                        add = ?Buffer.toArray(buffs);
+                        remove = null;
+                    };
+                };
+
+        return (gameTxData, Buffer.toArray(nfts), itemsConfig);
+    };
 };
