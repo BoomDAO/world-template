@@ -1,5 +1,5 @@
 {
-  "name": "game_template_frontend",
+  "name": "world_template_frontend",
   "version": "0.1.0",
   "description": "Internet Computer starter application",
   "keywords": ["Internet Computer", "Motoko", "JavaScript", "Canister"],
@@ -8,7 +8,7 @@
     "prebuild": "npm run generate",
     "start": "webpack serve --mode development --env development",
     "prestart": "npm run generate",
-    "generate": "dfx generate game_template_backend"
+    "generate": "dfx generate world_template_backend"
   },
   "devDependencies": {
     "@dfinity/agent": "0.15.6",

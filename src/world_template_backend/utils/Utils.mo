@@ -47,6 +47,18 @@ module {
     };
 
     //utility functions
+    public func tokenizeToIcp(val : Float) : (Nat64){
+        return Nat64.fromNat(textToNat(Int.toText(Float.toInt(val * 100_000_000))));
+    };
+    public func tokenizeToIcrc(val : Float, baseCeroCount : Nat) : (Nat64){
+        var base : Float = 10;
+        var i = 0;
+        while(i < baseCeroCount){
+            base *= 10;
+            i += 1;
+        };
+        return Nat64.fromNat(textToNat(Int.toText(Float.toInt(val * base))));
+    };
     //
     public func key(x : Nat32) : Trie.Key<Nat32> {
         return { hash = x; key = x };
@@ -103,4 +115,22 @@ module {
         var array : [Nat8] = Blob.toArray(blob);
         return array;
     };
+
+    public func isResultError<R,E>(result : Result.Result<R,E>) : (Bool){
+        switch(result){
+            case(#err(msg)){
+                return true;
+            };
+            case(#ok(msg)){
+                return false;
+            };
+        };
+    };
+
+    public func intToNat(value : Int) : (Nat) {
+        if(value < 0) {
+            return 0;
+        };
+        return textToNat(Int.toText(value));
+    }
 };
