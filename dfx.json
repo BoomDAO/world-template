@@ -1,7 +1,7 @@
 {
   "canisters": {
     "world": {
-      "main": "src/game_template_backend/World/world.mo",
+      "main": "src/world_template_backend/World/world.mo",
       "type": "motoko"
     }
   },

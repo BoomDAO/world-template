@@ -30,43 +30,40 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
 module {
-    public type entityId = Text;
-    public type gameId = Text;
     public type userId = Text;
+    public type worldId = Text;
+    public type groupId = Text;
+    public type entityId = Text;
+    public type actionId = Text;
     public type nodeId = Text;
 
     public type Entity = {
         eid : Text;
         gid : Text;
-        data : {
-            #standard : {
-                quantity : ?Float;
-                expiration : ?Nat;
-            };
-            #custom : CustomData;
-        };
-    };
-    public type CustomData = {
-        #profile : Profile;
-        #purchases : Purchase;
-        #action : Action;
+        wid : Text;
+        attribute : ?Text;
+        quantity : ?Float;
+        expiration : ?Nat;
     };
     public type Action = {
         intervalStartTs : Nat;
         actionCount : Nat;
     };
-    public type Profile = {
+    public type MintToken = {
         name : Text;
+        description : Text;
         imageUrl : Text;
-        avatarKey : Text;
+        canister : Text;
     };
-    public type Purchase = {
-        offers : [Text];
+    public type MintNft = {
+        name : Text;
+        description : Text;
+        imageUrl : Text;
+        canister : Text;
+        assetId : Text;
+        collection : Text;
+        metadata : Text;
     };
-    public type EntityPermission = {
-        incrementQuantityDailyCap: ?Nat;
-        decrementQuantityDailyCap: ?Nat;
-        incrementExpirationDailyCap: ?Nat;
-        decrementExpirationDailyCap: ?Nat;
-    };
+    public type EntityPermission = {};
+    public type Response = (Action, [Entity], [MintNft], [MintToken]);
 };

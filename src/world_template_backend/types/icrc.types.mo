@@ -5,7 +5,16 @@ import Result "mo:base/Result";
 
 
 module {
-    public type Account = { owner : Principal; subaccount : ?[Nat8] };
+    
+
+    public type Account = { owner : Principal; subaccount : ?Subaccount };
+    public type Subaccount = Blob;
+    public type Tokens = Nat;
+    public type Memo = Blob;
+    public type Timestamp = Nat64;
+    public type Duration = Nat64;
+    public type TxIndex = Nat;
+
     public type ArchivedTransactionRange = {
         callback : shared query GetTransactionsRequest -> async {
             transactions : [Transaction];
@@ -79,6 +88,11 @@ module {
         #InsufficientFunds : { balance : Nat };
     };
     public type Value = { #Int : Int; #Nat : Nat; #Blob : [Nat8]; #Text : Text };
+
+    public type TransferFromError = TransferError or {
+    #InsufficientAllowance : { allowance : Nat };
+    };
+
     public type Self = actor {
         get_transactions : shared query GetTransactionsRequest -> async GetTransactionsResponse;
         http_request : shared query HttpRequest -> async HttpResponse;
@@ -92,5 +106,14 @@ module {
         icrc1_symbol : shared query () -> async Text;
         icrc1_total_supply : shared query () -> async Nat;
         icrc1_transfer : shared TransferArg -> async Result;
+        icrc2_transfer_from : shared ({
+            spender_subaccount : ?Subaccount;
+            from : Account;
+            to : Account;
+            amount : Tokens;
+            fee : ?Tokens;
+            memo : ?Memo;
+            created_at_time : ?Timestamp;
+            }) -> async Result.Result<TxIndex, TransferFromError>
     };
 };

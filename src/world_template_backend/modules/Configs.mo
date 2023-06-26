@@ -14,281 +14,505 @@ import Int "mo:base/Int";
 import ENV "../utils/Env";
 import TDatabase "../types/world.types";
 import Nat64 "mo:base/Nat64";
+import Debug "mo:base/Debug";
 
 module{
-    public type entityId = Text;
-    public type gameId = Text;
-    public type userId = Text;
-    public type nodeId = Text;
     // ================ CONFIGS ========================= //
-    type TokenConfig = 
+    public type EntityConfig = 
+    {
+        eid: Text;
+        gid: Text;
+        name: ?Text;
+        description: ?Text;
+        imageUrl: ?Text;
+        objectUrl: ?Text;
+        rarity: ?Text;
+        duration: ?Nat;
+        tag: Text;
+        metadata: Text;
+    };
+
+    //ActionResult
+    public type entityId = Text;
+    public type groupId = Text;
+    public type worldId = ?Text;
+
+    public type attribute = Text;
+    public type quantity = Float;
+    public type duration = Nat;
+    
+    public type MintToken = 
     {
         name: Text;
         description : Text; 
-        urlImg: Text; 
+        imageUrl: Text; 
         canister : Text;
     };
-    type NftConfig = 
+    public type MintNft = 
     {
         name: Text;
         description : Text; 
-        urlImg: Text; 
+        imageUrl: Text; 
         canister : Text;
         assetId: Text;
         collection:  Text;
         metadata: Text;
     };
-    type StatConfig = 
-    {
-        name: Text;
-        description : Text; 
-        urlImg: Text; 
-        type_ : Text;
-    };
-    type ItemConfig = 
-    {
-        name: Text;
-        description : Text; 
-        urlImg: Text; 
-        tag : Text;
-        rarity: Text;
-    };
-
-    //Offer
-    type OfferConfig = 
-    {        
-        title: Text;
-        description: Text;
-        amount : Float;
-    };
-
-    //ActionResult
-    type CustomData = TDatabase.CustomData;
-    
-    public type UpdateStandardEntity = {
+    public type ActionOutcomeOption = {
         weight: Float;
-        update : {
-            #incrementQuantity : (
-                gameId,
+        option : {
+            #mintToken : MintToken;
+            #mintNft : MintNft;
+            #setEntityAttribute : (
+                worldId,
+                groupId,
                 entityId,
-                Float
+                attribute
             );
-            #decrementQuantity : (
-                gameId,
+            #spendEntityQuantity : (
+                worldId,
+                groupId,
                 entityId,
-                Float
+                quantity
             );
-            #incrementExpiration : (
-                gameId,
+            #receiveEntityQuantity : (
+                worldId,
+                groupId,
                 entityId,
-                Nat
+                quantity
             );
-            #decrementExpiration : (
-                gameId,
+            #renewEntityExpiration : (
+                worldId,
+                groupId,
                 entityId,
-                Nat
+                duration
+            );
+            #reduceEntityExpiration : (
+                worldId,
+                groupId,
+                entityId,
+                duration
+            );
+            #deleteEntity : (
+                worldId,
+                groupId,
+                entityId
             );
         }
     };
-    public type UpdateCustomEntity = {
-        weight: Float;
-        setCustomData : ?(gameId, entityId, CustomData);
-    };
     public type ActionOutcome = {
-        #standard : UpdateStandardEntity;
-        #custom : UpdateCustomEntity;
+        possibleOutcomes: [ActionOutcomeOption];
     };
-    public type ActionRoll = {
+    public type ActionResult = {
         outcomes: [ActionOutcome];
-    };
-    public type ActionResult = 
-    {
-        rolls: [ActionRoll];
     };
 
     //ActionConfig
-    public type ActionDataType = 
+    public type ActionArg = 
+    {
+        #default : {actionId: Text; };
+        #burnNft : {actionId: Text; index: Nat32; };
+        #spendTokens : {actionId: Text; hash: Nat64; };
+        #claimStakingReward : {actionId: Text; };
+    };
+
+    public type ActionPlugin = 
     {
         #burnNft : {nftCanister: Text;};
-        #spendTokens : {tokenCanister: Text; amt: Float; to : Text; };
-        #spendEntities : {entities: [(gid : Text, eid : Text, quantity : Float)]};
-        #claimStakingReward : { requiredAmount : Nat };
+        #spendTokens : {tokenCanister: ? Text; amt: Float; baseZeroCount: Nat;  toPrincipal : Text; };
+        #claimStakingReward : { requiredAmount : Float; baseZeroCount: Nat; tokenCanister: Text; };
     };
     public type ActionConstraint = 
     {
-        #timeConstraint: { intervalDuration: Nat; actionsPerInterval: Nat; };
-        #entityConstraint : { entityId: Text; greaterThan: ?Nat; lessThan: ?Nat; };
+        timeConstraint: ? {
+            intervalDuration: Nat; 
+            actionsPerInterval: Nat; 
+        };
+        entityConstraint : ? [{ 
+            worldId: Text; 
+            groupId: Text; 
+            entityId: Text; 
+            equalToAttribute: ?Text; 
+            greaterThanOrEqualQuantity: ?Float; 
+            lessThanQuantity: ?Float; 
+            notExpired: ?Bool
+        }];
     };
     public type ActionConfig = 
     {
-        actionDataType: ActionDataType;
+        aid : Text;
+        name : ?Text;
+        description : ?Text;
+        tag : ?Text;
+        actionPlugin: ?ActionPlugin;
+        actionConstraint: ?ActionConstraint;
         actionResult: ActionResult;
-        actionConstraints: ?[ActionConstraint];
     };
 
     //ConfigDataType
-    public type ConfigDataType = {
-        #token : TokenConfig;
-        #nft : NftConfig;
-        #stat : StatConfig;
-        #item : ItemConfig;
-        #offer : OfferConfig;
-        #action : ActionConfig;
-    };
 
-    public type EntityConfig = {
-        eid : Text;
-        configDataType : ConfigDataType;
-    };
+    public type EntityConfigs = [EntityConfig]; 
+    public type ActionConfigs = [ActionConfig]; 
     
-    public type Configs = [EntityConfig]; 
-    
-    public let configs : Configs = [
-        //TOKENS
-        { 
-            eid = "token_test";
-            configDataType = #token { name = "Token Test"; description = "This is a test token"; urlImg = ""; canister = ENV.ICRC1_Ledger }
-        },
-        
-        //NFTS
-        { 
-            eid = "pastry_reward"; 
-            configDataType = #nft { name = "Pastry Reward"; description = "Burn it to mint an Pastry Nft"; urlImg = ""; canister = "jh775-jaaaa-aaaal-qbuda-cai"; assetId = "0"; collection = "Plethora Items"; metadata = "" }
-        },
-        
-        //ITEMS
+    public let entityConfigs : EntityConfigs = [      
+        // //ITEMS
         { 
             eid = "pastry_candy_cake"; 
-            configDataType = #item { name = "Thicc Boy"; description = "just an item"; urlImg = ""; tag = ""; rarity = "common"; }
+            gid = "";
+            name = ?"Thicc Boy"; 
+            description = ?"just an item"; 
+            imageUrl = ?"";
+            objectUrl = ?""; 
+            rarity = ?"common"; 
+            duration = null;
+            metadata = "";
+            tag = "item skin"; 
+
         },
         { 
-            eid = "pastry_candy_candy"; configDataType = #item { name = "The Candy Emperor"; description = "just an item"; urlImg = ""; tag = ""; rarity = "common"; }
+            eid = "pastry_candy_candy";
+            gid = "";
+            name = ?"The Candy Emperor"; 
+            description = ?"just an item"; 
+            imageUrl = ?"";
+            objectUrl = ?"";  
+            rarity = ?"common"; 
+            duration = null; 
+            metadata = "";
+            tag = "item skin"; 
         },
         { 
-            eid = "pastry_candy_croissant"; 
-            configDataType = #item { name = "Le Frenchy"; description = "just an item"; urlImg = ""; tag = ""; rarity = "common"; }
+            eid = "pastry_candy_croissant";
+            gid = "";
+            name = ?"Le Frenchy"; 
+            description = ?"just an item"; 
+            imageUrl = ?"";
+            objectUrl = ?"";
+            rarity = ?"common"; 
+            duration = null;
+            metadata = "";
+            tag = "item skin"; 
         },
         { 
             eid = "pastry_candy_cupcake"; 
-            configDataType = #item { name = "Princess Sweet Cheeks"; description = "just an item"; urlImg = ""; tag = ""; rarity = "common"; }
+            gid = "";
+            name = ?"Princess Sweet Cheeks"; 
+            description = ?"just an item"; 
+            imageUrl = ?"";
+            objectUrl = ?"";
+            rarity = ?"common";
+            duration = null;
+            metadata = "";
+            tag = "item skin";
         },
         { 
             eid = "pastry_candy_donut"; 
-            configDataType = #item { name = " Donyatsu"; description = "just an item"; urlImg = ""; tag = ""; rarity = "common"; }
+            gid = "";
+            name = ?"Donyatsu"; 
+            description = ?"just an item"; 
+            imageUrl = ?"";
+            objectUrl = ?"";
+            rarity = ?"common";
+            duration = null;
+            metadata = "";
+            tag = "item skin";
         },
         { 
-            eid = "pastry_candy_ice_cream"; 
-            configDataType = #item { name = "Prince Yummy Buddy"; description = "just an item"; urlImg = ""; tag = ""; rarity = "rare"; }
+            eid = "pastry_candy_ice_cream";
+            gid = "";
+            name = ?"Prince Yummy Buddy"; 
+            description = ?"just an item"; 
+            imageUrl = ?"";
+            objectUrl = ?"";
+            rarity = ?"rare";
+            duration = null;
+            metadata = "";
+            tag = "item skin";
         },
         { 
-            eid = "pastry_candy_marshmallow"; 
-            configDataType = #item { name = "Sugar Baby"; description = "just an item"; urlImg = ""; tag = ""; rarity = "rare"; }
+            eid = "pastry_candy_marshmallow";
+            gid = "";
+            name = ?"Sugar Baby"; 
+            description = ?"just an item"; 
+            imageUrl = ?"";
+            objectUrl = ?"";
+            rarity = ?"rare";
+            duration = null; 
+            metadata = "";
+            tag = "item skin";
         },
         { 
-            eid = "pastry_candy_chocolate"; 
-            configDataType = #item { name = "Sir Chocobro"; description = "just an item"; urlImg = ""; tag = ""; rarity = "special"; }
+            eid = "pastry_candy_chocolate";
+            gid = "";
+            name = ?"Sir Chocobro"; 
+            description = ?"just an item"; 
+            imageUrl = ?"";
+            objectUrl = ?"";
+            rarity = ?"special";
+            duration = null;
+            metadata = "";
+            tag = "item skin";
         },
 
         { 
-            eid = "item1"; 
-            configDataType = #item { name = "Item 1"; description = "just an item"; urlImg = ""; tag = ""; rarity = "common"; }
+            eid = "item1";
+            gid = "";
+            name = ?"Item 1"; 
+            description = ?"just an item"; 
+            imageUrl = ?"";
+            objectUrl = ?"";
+            rarity = ?"common";
+            duration = null; 
+            metadata = "";
+            tag = "item skin";
         },
         { 
-            eid = "item2"; 
-            configDataType = #item { name = "Item 2"; description = "just an item"; urlImg = ""; tag = ""; rarity = "common"; }
+            eid = "item2";
+            gid = "";
+            name = ?"Item 2"; 
+            description = ?"just an item"; 
+            imageUrl = ?"";
+            objectUrl = ?"";
+            rarity = ?"common";
+            duration = null; 
+            metadata = "";
+            tag = "item skin";
         },
-        
-        //GACHAS
+        //// add more items here...
+    ];
+    public let actionConfigs : ActionConfigs = [
         { 
-            eid = "test_nft_ic"; 
-            configDataType = #gacha { rolls = 
-        [
-            {
-                variables = [
-                    { entity = {eid = "pastry_candy_cake"; gid = "game"; customData : ? TDatabase.CustomData = null; quantity = ?1; timestamp = null}; weight = 100 },
-                    { entity = {eid = "pastry_candy_candy"; gid = "game"; customData : ? TDatabase.CustomData = null; quantity = ?1; timestamp = null}; weight = 100 },
-                    { entity = {eid = "pastry_candy_chocolate"; gid = "game"; customData : ? TDatabase.CustomData = null; quantity = ?1; timestamp = null}; weight = 100 },
-                    { entity = {eid = "pastry_candy_croissant"; gid = "game"; customData : ? TDatabase.CustomData = null; quantity = ?1; timestamp = null}; weight = 100 },
-                    { entity = {eid = "pastry_candy_cupcake"; gid = "game"; customData : ? TDatabase.CustomData = null; quantity = ?1; timestamp = null}; weight = 100 },
-                    { entity = {eid = "pastry_candy_donut"; gid = "game"; customData : ? TDatabase.CustomData = null; quantity = ?1; timestamp = null}; weight = 100 },
-                    { entity = {eid = "pastry_candy_ice_cream"; gid = "game"; customData : ? TDatabase.CustomData = null; quantity = ?1; timestamp = null}; weight = 100 },
-                    { entity = {eid = "pastry_candy_marshmallow"; gid = "game"; customData : ? TDatabase.CustomData = null; quantity = ?1; timestamp = null}; weight = 100 },
+            aid = "stakeIcp";
+            name = ?"Stake Icp";
+            description = ?"You can try receive reward over time for staking at least 0.005 ICP";
+            tag = ?"Claim Stake";
+            actionPlugin = ? #claimStakingReward 
+            { 
+                requiredAmount = 0.005;//0.005 ICP
+                baseZeroCount = 100_000_000;
+                tokenCanister = ENV.Ledger
+            };
+            actionConstraint = ? {
+                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                entityConstraint = null;
+            };
+            actionResult = {
+                outcomes = [
+                    {
+                        possibleOutcomes = [
+                            { option = #receiveEntityQuantity (null, "", "pastry_candy_cake", 1);  weight = 100;},
+                        ]
+                    }
                 ]
-            }
+            };
+        },
+        { 
+            aid = "stakeIcrc";
+            name = ?"Stake Icrc";
+            description = ?"You can try receive reward over time for staking at least 0.005 ICP";
+            tag = ?"Claim Stake";
+            actionPlugin = ? #claimStakingReward 
+            { 
+                requiredAmount = 0.00005;//0.005 ICRC
+                baseZeroCount = 100_000_000;
+                tokenCanister = ENV.ICRC1_Ledger;
+            };
+            actionConstraint = ? {
+                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                entityConstraint = null;
+            };
+            actionResult = {
+                outcomes = [
+                    {
+                        possibleOutcomes = [
+                            { option = #receiveEntityQuantity (null, "", "pastry_candy_candy", 1);  weight = 100;},
+                        ]
+                    }
                 ]
-            }
+            };
         },
         { 
-            eid = "test_item_ic"; 
-            configDataType = #gacha { rolls = 
-        [
-            {
-                variables = [
-                    { entity = {eid = "item1"; gid = "game"; customData : ? TDatabase.CustomData = null; quantity = ?1; timestamp = null}; weight = 100 }
+            aid = "burnPastryRewardTiketAction";
+            name = ?"Pastry Reward Spin";
+            description = ?"You can burn Pastry Reward Nft to get a Pastry Reward!";
+            tag = ?"BurnNft";
+            actionPlugin = ? #burnNft { nftCanister = "b5kkq-6iaaa-aaaal-qb6ga-cai"; };
+            actionConstraint = ? {
+                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                entityConstraint = null;
+            };
+            actionResult = {
+                outcomes = [
+                    {
+                        possibleOutcomes = [
+                            { option = #receiveEntityQuantity (null, "", "pastry_candy_cake", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "pastry_candy_candy", 1); weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "pastry_candy_chocolate", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "pastry_candy_croissant", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "pastry_candy_cupcake", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "pastry_candy_donut", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "pastry_candy_ice_cream", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "pastry_candy_marshmallow", 1);  weight = 100;},
+                        ]
+                    }
                 ]
-            }
+            };
+        },
+        { 
+            aid = "mint_pastry_reward_tikets_nft";
+            name = ?"Mint a Pastry Reward Tikets Nft";
+            description = ?"You get a \"Pastry Reward Nft\" 1 by spending just 0.0001 icp";
+            tag = ?"Mint";
+            actionPlugin = ? #spendTokens { tokenCanister =  null; amt = 0.0001; baseZeroCount = 100_000_000; toPrincipal = ENV.paymenthub_canister_id };
+            actionConstraint = ? {
+                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                entityConstraint = null;
+            };
+            actionResult = { 
+                outcomes = [
+                    {
+                        possibleOutcomes = [
+                            { option = #mintNft {
+                                name = "Tiket";
+                                description = "None"; 
+                                imageUrl = ""; 
+                                canister  = "b5kkq-6iaaa-aaaal-qb6ga-cai";
+                                assetId = "Pastry Reward Tikets";
+                                collection = "Pastry Reward";
+                                metadata = "{\"usage\":\"pastry-variable-offer\"}";
+
+                            }; weight = 100;},
+                        ]
+                    }
                 ]
-            }
+            };
         },
         { 
-            eid = "test_item_rc"; 
-            configDataType =#gacha { rolls = 
-        [
-            {
-                variables = [
-                    { entity = {eid = "item2"; gid = "game"; customData : ? TDatabase.CustomData = null; quantity = ?1; timestamp = null}; weight = 100 }
+            aid = "buyItem1_Icp";
+            name = ?"Item 1 Offer!";
+            description = ?"You get a Item 1 by spending just 0.0001 icp";
+            tag = ?"Offer";
+            actionPlugin = ? #spendTokens { tokenCanister =  null; amt = 0.0001; baseZeroCount = 100_000_000; toPrincipal = ENV.paymenthub_canister_id };
+            actionConstraint = ? {
+                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                entityConstraint = null;
+            };
+            actionResult = { 
+                outcomes = [
+                    {
+                        possibleOutcomes = [
+                            { option = #receiveEntityQuantity (null, "", "item1", 1); weight = 100;},
+                        ]
+                    }
                 ]
-            }
+            };
+        },
+        { 
+            aid = "buyItem2_Icrc";
+            name = ?"Item 2 Offer!";
+            description = ?"";
+            tag = ?"Offer";
+            actionPlugin = ? #spendTokens { tokenCanister = ? ENV.ICRC1_Ledger; amt = 0.00001; baseZeroCount = 100_000_000; toPrincipal = ENV.paymenthub_canister_id };
+            actionConstraint = ? {
+                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                entityConstraint = null;
+            };
+            actionResult = { 
+                outcomes = [
+                    {
+                        possibleOutcomes = [
+                            { option = #receiveEntityQuantity (null, "", "item2", 1); weight = 100;},
+                        ]
+                    }
                 ]
-            }
-        },
-        
-        //OFFERS
-        { 
-            eid = "test_item_ic";
-            configDataType = #offer {
-            title = "test_item_ic";
-            description = "test_item_ic";
-            amount = 0.0001;
-            }
-        },
-        
-        //ACTIONS
-        { 
-            eid = "burnPastryRewardAction";
-            configDataType =#action {
-            actionDataType = #burnNft { nftCanister = ""; index = ""; };
-            timeConstraint = ? {intervalDuration = 120_000_000_000; actionsPerInterval = 1};
-            gachaRewardConfigId = "test_nft_ic";
-            }
+            };
         },
         { 
-            eid = "buyItem1_Icp";
-            configDataType =#action {
-            actionDataType = #spendTokens { tokenCanister =  ENV.Ledger; amt = 0.0001; to = ENV.paymenthub_canister_id; };
-            timeConstraint = ? {intervalDuration = 120_000_000_000; actionsPerInterval = 1};
-            gachaRewardConfigId = "test_item_ic";
-            }
+            aid = "buyItem1_Item2";
+            name = ?"Trade Offer";
+            description = ?"";
+            tag = ?"Offer";
+            actionPlugin = null;
+            actionConstraint = ? {
+                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                entityConstraint = null;
+            };
+            actionResult = { 
+                outcomes = [
+                    {//Substract
+                        possibleOutcomes = [
+                            { option = #spendEntityQuantity (null, "", "item2", 1); weight = 100;},
+                        ]
+                    },
+                    {//Add
+                        possibleOutcomes = [
+                            { option = #receiveEntityQuantity (null, "", "item1", 1); weight = 100;},
+                        ]
+                    }
+                ]
+            };
+        },
+                { 
+            aid = "buyPastrySpinNft_Item1";
+            name = ?"Buy Pastry Spin Nft";
+            description = ?"";
+            tag = ?"Offer";
+            actionPlugin = null;
+            actionConstraint = ? {
+                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                entityConstraint = null;
+            };
+            actionResult = { 
+                outcomes = [
+                    {//Substract
+                        possibleOutcomes = [
+                            { 
+                                option = #mintNft 
+                                {
+                                    assetId = "0";
+                                    canister = "b5kkq-6iaaa-aaaal-qb6ga-cai";
+                                    collection = "NFT Ticket Test";
+                                    description = ""; 
+                                    imageUrl = ""; 
+                                    metadata = ""; 
+                                    name = ""
+                                }; 
+                                weight = 100;
+                            },
+                        ]
+                    },
+                    {//Add
+                        possibleOutcomes = [
+                            { option = #spendEntityQuantity (null, "", "item1", 1); weight = 100;},
+                        ]
+                    }
+                ]
+            };
         },
         { 
-            eid = "buyItem2_item1";
-            configDataType =#action {
-            actionDataType = #spendEntities { entities = [
-                ("game_gid", "item1_eid", 5) //GameId, EntityId, Quantity
-            ]};
-            timeConstraint = ? {intervalDuration = 120_000_000_000; actionsPerInterval = 1};
-            gachaRewardConfigId = "test_item_rc";
-            }
+            aid = "burn_pastrySpinNft";
+            name = ?"Burn Pastry Spin Nft";
+            description = ?"";
+            tag = ?"BurnNft";
+            actionPlugin = null;
+            actionConstraint = ? {
+                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                entityConstraint = null;
+            };
+            actionResult = { 
+                outcomes = [
+                    {//Substract
+                        possibleOutcomes = [
+                            { option = #spendEntityQuantity (null, "", "item2", 1); weight = 100;},
+                        ]
+                    },
+                    {//Add
+                        possibleOutcomes = [
+                            { option = #receiveEntityQuantity (null, "", "item1", 1); weight = 100;},
+                        ]
+                    }
+                ]
+            };
         },
-        { 
-            eid = "buyItem2_Icrc";
-            configDataType =#action {
-            actionDataType = #spendTokens { tokenCanister =  ENV.ICRC1_Ledger; amt = 0.0001; to = ENV.paymenthub_canister_id; };
-            timeConstraint = ? {intervalDuration = 120_000_000_000; actionsPerInterval = 1};
-            gachaRewardConfigId = "test_item_rc";
-        }
-        }
-        
-        // add more items here...
     ];
 }

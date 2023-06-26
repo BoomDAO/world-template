@@ -9,7 +9,6 @@ import Error "mo:base/Error";
 import Float "mo:base/Float";
 import HashMap "mo:base/HashMap";
 import Hash "mo:base/Hash";
-import Map "mo:map/Map";
 import Int "mo:base/Int";
 import Int16 "mo:base/Int16";
 import Int8 "mo:base/Int8";
@@ -40,58 +39,69 @@ import EXTCORE "../utils/Core";
 import EXT "../types/ext.types";
 import AccountIdentifier "../utils/AccountIdentifier";
 import ICP "../types/icp.types";
-import ICRC1 "../types/icrc.types";
+import ICRC "../types/icrc.types";
 import TDatabase "../types/world.types";
 import TStaking "../types/staking.types";
 
 //import TStakeHub "../../../../standard/StakingStandard/StakingHub.mo";
 import Config "../modules/Configs";
 
-actor GameCanisterTemplate {
+// actor class WorldTemplate(owner : Principal) = this {
+actor class WorldTemplate() = this {
+    private var owner : Principal = Principal.fromText("26otq-bnbgp-bfbhy-i7ypc-czyxx-3rlax-yrrny-issrb-kwepg-vqtcs-pae"); 
     //Interfaces
-    private type WorldNode = actor {
-        processActionEntities : shared (uid : TDatabase.userId, actionConfig : Config.ActionConfig) -> async (Result.Result<[TDatabase.Entity]>);
+    type UserNode = actor {
+        processActionConfig : shared (uid : TDatabase.userId, aid : TDatabase.actionId, actionConfig : Config.ActionConfig) -> async (Result.Result<TDatabase.Response, Text>);
+        getAllUserWorldEntities : shared (uid : TDatabase.userId, wid : TDatabase.worldId) -> async (Result.Result<[TDatabase.Entity], Text>);
     };
-    private type WorldbHub = actor {
-        getUserCanisterId : shared (Text) -> async (Result.Result<Text, Text>);
+    type WorldbHub = actor {
+        createNewUser : shared (Principal) -> async (Result.Result<Text, Text>);
+        getUserNodeCanisterId : shared (Text) -> async (Result.Result<Text, Text>);
+
+        grantEntityPermission : shared (Text, Text, Text, TDatabase.EntityPermission) -> async (); //args -> (groupId, entityId, principal, permissions)
+        removeEntityPermission : shared (Text, Text, Text) -> async (); //args -> (groupId, entityId, principal)
+        grantGlobalPermission : shared (Text) -> async (); //args -> (principal)
+        removeGlobalPermission : shared (Text) -> async (); //args -> (principal)
     };
-    private type StakeHub = actor {
+    type StakeHub = actor {
         getUserStakes : shared (Text) -> async ([TStaking.Stake]);
     };  
-    
+    type ICP = actor {
+        transfer : shared ICP.TransferArgs -> async ICP.TransferResult;
+    };
+    type NFT = actor {
+        ext_mint : ([(EXT.AccountIdentifier, EXT.Metadata)]) -> async [EXT.TokenIndex];
+    };
+
     let worldhub : WorldbHub = actor(ENV.WorldbHub);
 
     let test_nft_principal = "jh775-jaaaa-aaaal-qbuda-cai";
 
     //stable memory
-    private stable var _admins : [Text] = ENV.admins;
-
-    private stable var isInit : Bool = false;
+    private stable var _owner : Text = Principal.toText(owner);
+    private stable var _admins : [Text] = [Principal.toText(owner), "2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"]; //here hitesh principal is temporary
 
     //Configs
-    private var configs = Buffer.Buffer<Config.EntityConfig>(0);
-    private stable var tempUpdateConfig : Config.Configs = [];
-    
-    let { phash; } = Map;
-    stable let userActionInteration = Map.new<Principal, (iterationCount : Nat, startTs : Int)>(phash);
+    private var entityConfigs = Buffer.Buffer<Config.EntityConfig>(0);
+    private stable var tempUpdateEntityConfig : Config.EntityConfigs = [];
+
+    private var actionConfigs = Buffer.Buffer<Config.ActionConfig>(0);
+    private stable var tempUpdateActionConfig : Config.ActionConfigs = [];
 
     system func preupgrade() {        
-        if(isInit){
-            tempUpdateConfig := Buffer.toArray(configs);
-        }
+        tempUpdateEntityConfig := Buffer.toArray(entityConfigs);
+
+        tempUpdateActionConfig := Buffer.toArray(actionConfigs);
     };
     system func postupgrade() {
-        if(isInit == false){
-            isInit := true;
-            configs := Buffer.fromArray(Config.configs);
-        }
-        else {
-            configs := Buffer.fromArray(tempUpdateConfig);
-            tempUpdateConfig := [];
-        }
-    };
+        entityConfigs := Buffer.fromArray(tempUpdateEntityConfig);
+        tempUpdateEntityConfig := [];
 
-    private shared query ({ caller }) func this() : async (Principal) {
+        actionConfigs := Buffer.fromArray(tempUpdateActionConfig);
+        tempUpdateActionConfig := [];
+    };
+    
+    public shared query ({ caller }) func whoAmI() : async (Principal) {
         return caller;
     };
 
@@ -125,461 +135,450 @@ actor GameCanisterTemplate {
         _admins := Buffer.toArray(b);
     };
 
+    public query func getOwner() : async Text {return Principal.toText(owner)};
+
     public query func cycleBalance() : async Nat {
         Cycles.balance();
     };
 
-    //Remote_Configs of Game Canister
-    private func _getSpecificConfig(id : Text) : (? Config.ConfigDataType) {
-        for (config in configs.vals()) {
-            if(config.id == id) return ? config.configDataType;
+    //GET CONFIG
+    private func _getSpecificEntityConfig(eid : Text, gid : Text) : (? Config.EntityConfig) {
+        for (config in entityConfigs.vals()) {
+            if(config.eid == eid) {
+                if(config.gid == gid){
+                    return ? config;
+                };
+            };
+        };
+        return null;
+    };
+    private func _getSpecificActionConfig(aid : Text) : (? Config.ActionConfig) {
+        for (config in actionConfigs.vals()) {
+            if(config.aid == aid) return ? config;
         };
         return null;
     };
 
-    private func _getSpecificConfigs(configIds : [Text]) : (Buffer.Buffer<?Config.ConfigDataType>) {
-        var result = Buffer.Buffer<?Config.ConfigDataType>(0);
-        for (id in configIds.vals()) {
-            var found: ?Config.ConfigDataType = null;
-            found := _getSpecificConfig(id);
-
-            result.add(found);
-        };
-        return result;
+    public query func getEntityConfigs() : async ([Config.EntityConfig]){
+        return Buffer.toArray(entityConfigs);
+    };
+    public query func getActionConfigs() : async ([Config.ActionConfig]){
+        return Buffer.toArray(actionConfigs);
     };
 
-    public func getSpecificConfig(configId : Text) : async (? Config.ConfigDataType) {
-        return _getSpecificConfig(configId);
-    };
-
-    public func getSpecificConfigs(configIds : [Text]) : async ([?Config.ConfigDataType]){
-        return Buffer.toArray(_getSpecificConfigs(configIds));
-    };
-
-    private func _configExist(id : Text) : (Bool, Int){
+    //CHECK CONFIG
+    private func _configEntityExist(eid : Text, gid : Text) : (Bool, Int){
         var index = 0;
-        for(configElement in configs.vals()){
-            if(configElement.id == id) return (true, index);
+        for(configElement in entityConfigs.vals()){
+            if(configElement.eid == eid) {
+                if(configElement.gid == gid){
+                    return (true, index);
+                };
+            };
             index += 1;
         };
         return (false, -1);
     };
-    public shared ({ caller }) func createConfig(id : Text, configDataType : Config.ConfigDataType) : async (Result.Result<Text, Text>) {
-        let confixExist = _configExist(id);
-        if(confixExist.0){
-            configs.add({id; configDataType; });
+    private func _configActionExist(aid : Text) : (Bool, Int){
+        var index = 0;
+        for(configElement in actionConfigs.vals()){
+            if(configElement.aid == aid) {
+                return (true, index);
+            };
+            index += 1;
+        };
+        return (false, -1);
+    };
+    //CREATE CONFIG
+    public shared ({ caller }) func createEntityConfig(config : Config.EntityConfig) : async (Result.Result<Text, Text>) {
+        let confixExist = _configEntityExist(config.eid, config.gid);
+        if(confixExist.0 == false){
+            entityConfigs.add(config);
             return #ok("all good :)");
         };
         return #err("there is an entity already using that id, you can try updateConfig");
     };
-
-    public shared ({ caller }) func updateConfig(id : Text,  configDataType : Config.ConfigDataType) : async (Result.Result<Text, Text>) {
-        let confixExist = _configExist(id);
+    public shared ({ caller }) func createActionConfig(config : Config.ActionConfig) : async (Result.Result<Text, Text>) {
+        let confixExist = _configActionExist(config.aid);
+        if(confixExist.0 == false){
+            actionConfigs.add(config);
+            return #ok("all good :)");
+        };
+        return #err("there is an action already using that id, you can try updateConfig");
+    };
+    //UPDATE CONFIG
+    public shared ({ caller }) func updateEntityConfig(config : Config.EntityConfig) : async (Result.Result<Text, Text>) {
+        let confixExist = _configEntityExist(config.eid, config.gid);
         if(confixExist.0){
             var index = Utils.intToNat(confixExist.1);
-            configs.put(index, {id; configDataType; });
+            entityConfigs.put(index, config);
             return #ok("all good :)");
         };
-        return #err("there is no entity using that id");
+        return #err("there is no entity using that eid");
     };
-
-    public shared ({ caller }) func deleteConfig(id : Text) : async (Result.Result<Text, Text>) {
-        let confixExist = _configExist(id);
+    public shared ({ caller }) func updateActionConfig(config : Config.ActionConfig) : async (Result.Result<Text, Text>) {
+        let confixExist = _configActionExist(config.aid);
         if(confixExist.0){
-            ignore configs.remove(Utils.intToNat(confixExist.1));
+            var index = Utils.intToNat(confixExist.1);
+            actionConfigs.put(index, config);
             return #ok("all good :)");
         };
-        return #err("there is no entity using that id");
+        return #err("there is no entity using that eid");
+    };
+    //DELETE CONFIG
+    public shared ({ caller }) func deleteEntityConfig(eid : Text, gid : Text) : async (Result.Result<Text, Text>) {
+        let confixExist = _configEntityExist(eid, gid);
+        if(confixExist.0){
+            ignore entityConfigs.remove(Utils.intToNat(confixExist.1));
+            return #ok("all good :)");
+        };
+        return #err("there is no entity using that eid");
+    };
+    public shared ({ caller }) func deleteActionConfig(aid : Text) : async (Result.Result<Text, Text>) {
+        let confixExist = _configActionExist(aid);
+        if(confixExist.0){
+            ignore actionConfigs.remove(Utils.intToNat(confixExist.1));
+            return #ok("all good :)");
+        };
+        return #err("there is no entity using that eid");
+    };
+    //RESET CONFIG
+    public shared ({ caller }) func resetConfig() : async (Result.Result<(), ()>) {
+        entityConfigs := Buffer.fromArray(Config.entityConfigs);
+        actionConfigs := Buffer.fromArray(Config.actionConfigs);
+        return #ok();
     };
 
+    //Get Entities
+    public shared ({ caller }) func getAllUserWorldEntities() : async (Result.Result<[TDatabase.Entity], Text>){
+        let worldId = await whoAmI();
 
-    //Burn and Mint NFT's
-    // public shared (msg) func burnNft(collection_canister_id : Text, tokenindex : EXT.TokenIndex, aid : EXT.AccountIdentifier, gachaConfigId : Text) : async (Result.Result<[(gameId : Text, entityId : Text, quantity : Float)] , Text>) {
-    //     assert (AccountIdentifier.fromPrincipal(msg.caller, null) == aid);
-    //     var tokenid : EXT.TokenIdentifier = EXTCORE.TokenIdentifier.fromText(collection_canister_id, tokenindex);
-    //     let collection = actor (collection_canister_id) : actor {
-    //         ext_burn : (EXT.TokenIdentifier, EXT.AccountIdentifier) -> async (Result.Result<(), EXT.CommonError>);
-    //         extGetTokenMetadata : (EXT.TokenIndex) -> async (?EXT.Metadata);
-    //     };
-    //     var res : Result.Result<(), EXT.CommonError> = await collection.ext_burn(tokenid, aid);
-    //     switch (res) {
-    //         case (#ok) {
-    //             //notify server using http req
-    //             var m : ?EXT.Metadata = await collection.extGetTokenMetadata(tokenindex);
-    //             var json : Text = "";
-    //             switch (m) {
-    //                 case (?md) {
-    //                     switch (md) {
-    //                         case (#fungible _) {};
-    //                         case (#nonfungible d) {
-    //                             switch (d.metadata) {
-    //                                 case (?x) {
-    //                                     switch (x) {
-    //                                         case (#json j) { json := j };
-    //                                         case (#blob _) {};
-    //                                         case (#data _) {};
-    //                                     };
-    //                                 };
-    //                                 case _ {};
-    //                             };
-    //                         };
-    //                     };
-    //                 };
-    //                 case _ {};
-    //             };
+        var user_node_id : Text = "";
 
-    //             //Apply gacha to user
-    //             var configType : ? Config.ConfigDataType = null;
-    //             configType := Config.getSpecificConfig(gachaConfigId);
-    //             switch(configType){
-    //                 case(? notNull){
-    //                     switch(notNull){
-    //                         case(#gacha(configs)){
-    //                             return await processGacha(aid, configs);
-    //                         };
-    //                         case(_){
-    //                             return #err("config of id: \""#gachaConfigId#"\" mismatch type")
-    //                         };
-    //                     };
-    //                 };
-    //                 case(_){
-    //                     return #err("config of id: \""#gachaConfigId#"\" could not be found")
-    //                 }
-    //             };
-                
-    //         };
-    //         case (#err(e)) {
-    //             return #err("Nft Butn, Something went wrong while burning nft");
-    //         };
-    //     };
-    // };
-    //Payments : redirected to PaymentHub for verification and holding update.
-    // public shared ({caller}) func verifyTxIcp(height : Nat64, _to : Text, _from : Text, _amt : Nat64, gachaConfigId : Text) : async (Result.Result<[(gameId : Text, entityId : Text, quantity : Float)], Text>) {
-    //     assert (Principal.fromText(_from) == caller); //If payment done by correct person and _from arg is passed correctly
+        let uid = Principal.toText(caller);
+        switch (await worldhub.getUserNodeCanisterId(uid)){
+            case (#ok(okMsg_0)){
+                user_node_id := okMsg_0;
+            };
+            case(#err(errMsg_0)) {
 
-    //     let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
-    //         verifyTxIcp : shared (Nat64, Text, Text, Nat64) -> async ({
-    //             #Success : Text;
-    //             #Err : Text;
-    //         });
-    //     };
-    //     switch (await paymenthub.verifyTxIcp(height, _to, _from, _amt)) {
-    //         case (#Success s) {
-    //             //Apply gacha to user
-    //             var configType : ? Config.ConfigDataType = null;
-    //             configType := Config.getSpecificConfig(gachaConfigId);
-    //             switch(configType){
-    //                 case(? notNull){
-    //                     switch(notNull){
-    //                         case(#gacha(configs)){
-    //                             return await processGacha(_from, configs);
-    //                         };
-    //                         case(_){
-    //                             return #err("config of id: \""#gachaConfigId#"\" mismatch type")
-    //                         };
-    //                     };
-    //                 };
-    //                 case(_){
-    //                     return #err("config of id: \""#gachaConfigId#"\" could not be found")
-    //                 }
-    //             };
+                var newUserNodeId = await worldhub.createNewUser(caller);
+                switch(newUserNodeId){
+                    case(#ok(okMsg_1)){
+                        user_node_id := okMsg_1;
+                    };
+                    case(#err(errMsg_1)){
+                        return #err("user doesnt exist, thus, tried to created it, but failed on the attempt, msg: "#(errMsg_0# " " #errMsg_1));
+                    };
+                };
+            };
+        };
         
-    //         };
-    //         case (#Err e) {
-    //             return #err(e);
-    //         };
-    //     };
-    // };
-    // public shared ({caller}) func verifyTxIcrc(index : Nat, _to : Text, _from : Text, _amt : Nat, gachaConfigId : Text) : async (Result.Result<[(gameId : Text, entityId : Text, quantity : Float)], Text>) {
-    //     let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
-    //         verifyTxIcrc : shared (Nat, Text, Text, Nat) -> async ({
-    //             #Success : Text;
-    //             #Err : Text;
-    //         });
-    //     };
-    //     switch (await paymenthub.verifyTxIcrc(index, _to, _from, _amt)) {
-    //         case (#Success s) {
-    //             //Apply gacha to user
-    //             var configType : ? Config.ConfigDataType = null;
-    //             configType := Config.getSpecificConfig(gachaConfigId);
-    //             switch(configType){
-    //                 case(? notNull){
-    //                     switch(notNull){
-    //                         case(#gacha(configs)){
-    //                             return await processGacha(_from, configs);
-    //                         };
-    //                         case(_){
-    //                             return #err("config of id: \""#gachaConfigId#"\" mismatch type")
-    //                         };
-    //                     };
-    //                 };
-    //                 case(_){
-    //                     return #err("config of id: \""#gachaConfigId#"\" could not be found")
-    //                 }
-    //             };
-    //         };
-    //         case (#Err e) {
-    //             return #err(e);
-    //         };
-    //     };
-    // };
+        let userNode : UserNode = actor(user_node_id);
+        return await userNode.getAllUserWorldEntities(uid, Principal.toText(worldId))
+    };
+    //Burn and Mint NFT's
+    public shared (msg) func burnNft(collection_canister_id : Text, tokenindex : EXT.TokenIndex, uid : Principal) : async (Result.Result<(), Text>) {
+        let accountId = AccountIdentifier.fromPrincipal(uid, null);
 
-    // public shared ({ caller }) func processPlayerAction(actionArg: Config.ActionArg): async (Result.Result<[(gameId : Text, entityId : Text, quantity : Float)], Text>) { 
-    //     //Todo: Check for each action the timeConstraint
-    //     switch(actionArg){
-    //         case(#burnNft(arg)){
-    //             var configType : ? Config.ConfigDataType = null;
-    //             configType := Config.getSpecificConfig(arg.actionId);
+        if(accountId == "") return #err("Issue getting aid from uid");
 
-    //             switch(configType){
-    //                 case(? notNull){
-    //                     switch(notNull){
-    //                         case(#action(configs)){
-
-    //                             switch(configs.actionType){
-    //                                 case(#burnNft(unwrappedActionType)){
-    //                                     return await burnNft(unwrappedActionType.nftCanister, arg.index, arg.aid, configs.gachaRewardConfigId);
-    //                                 };
-    //                                 case(_){
-    //                                     return #err("Something went wrong, argument type \"burnNft\" mismatches config type")
-    //                                 }
-    //                             }
-    //                         };
-    //                         case(_){
-    //                             //SOMETHING WENT WRONG
-    //                             return #err("config of id: \""#arg.actionId#"\" mismatch type")
-    //                         };
-    //                     }
-    //                 };
-    //                 case(_){
-    //                     return #err("Config of id: \""#arg.actionId#"\" could not be found")
-    //                 }
-    //             }
-    //         };
-    //         case(#spendTokens(arg)){
-    //             var configType : ? Config.ConfigDataType = null;
-    //             configType := Config.getSpecificConfig(arg.actionId);
-
-    //             switch(configType){
-    //                 case(? notNull){
-    //                     switch(notNull){
-    //                         case(#action(configs)){
-
-    //                             switch(configs.actionType){
-    //                                 case(#spendTokens(unwrappedActionType)){
-    //                                     if(unwrappedActionType.to == ENV.Ledger){
-    //                                         return await verifyTxIcp(arg.hash, unwrappedActionType.to, arg.from, Utils.tokenizeToIcp(unwrappedActionType.amt), configs.gachaRewardConfigId);
-    //                                     }
-    //                                     else {
-    //                                         return await verifyTxIcrc(Nat64.toNat(arg.hash), unwrappedActionType.to, arg.from, Nat64.toNat(Utils.tokenizeToIcrc(unwrappedActionType.amt, 1000_000_000_000_000_000)), configs.gachaRewardConfigId);
-    //                                     };
-    //                                 };
-    //                                 case(_){
-    //                                     return #err("Something went wrong, argument type \"burnNft\" mismatches config type")
-    //                                 }
-    //                             }
-    //                         };
-    //                         case(_){
-    //                             //SOMETHING WENT WRONG
-    //                             return #err("config of id: \""#arg.actionId#"\" mismatch type")
-    //                         };
-    //                     }
-    //                 };
-    //                 case(_){
-    //                     return #err("Config of id: \""#arg.actionId#"\" could not be found")
-    //                 }
-    //             };
-    //         };
-    //         case(#spendEntities(arg)){
-    //             var configType : ? Config.ConfigDataType = null;
-    //             configType := Config.getSpecificConfig(arg.actionId);
- 
-    //             switch(configType){
-    //                 case(? notNull){
-    //                     switch(notNull){
-    //                         case(#action(configs)){
-    //                             switch(configs.actionType){
-    //                                 case(#spendEntities(unwrappedActionType)){
-    //                                     let callerText = Principal.toText(caller);
-    //                                     var canister_id : Text = "";
-    //                                     switch (await worldhub.getUserCanisterId(callerText)){
-    //                                         case (#ok c){
-    //                                             canister_id := c;
-    //                                         };
-    //                                         case _ {
-    //                                         };
-    //                                     };
-
-    //                                     let worldNode : WorldNode = actor(canister_id);
-    //                                     let transactResult = await worldNode.transactEntities(callerText , Principal.toText(await this()), { incrementQuantity = null; decrementQuantity = ? unwrappedActionType.entities; setCustomData = null  });
-
-    //                                     if(transactResult == #err("if failure")){
-    //                                         //TODO: throw error
-    //                                     };
-
-    //                                     var configType : ? Config.ConfigDataType = null;
-    //                                     configType := Config.getSpecificConfig(configs.gachaRewardConfigId);
-    //                                     switch(configType){
-    //                                         case(? notNull){
-    //                                             switch(notNull){
-    //                                                 case(#gacha(configs)){
-    //                                                     return await processGacha(callerText, configs);
-    //                                                 };
-    //                                                 case(_){
-    //                                                     return #err("config of id: \""#configs.gachaRewardConfigId#"\" mismatch type");
-    //                                                 };
-    //                                             };
-    //                                         };
-    //                                         case(_){
-    //                                             return #err("config of id: \""#configs.gachaRewardConfigId#"\" could not be found");
-    //                                         }
-    //                                     };
-    //                                 };
-    //                                 case(_){
-    //                                     return #err("Something went wrong, argument type \"burnNft\" mismatches config type")
-    //                                 }
-    //                             }
-    //                         };
-    //                         case(_){
-    //                             //SOMETHING WENT WRONG
-    //                             return #err("config of id: \""#arg.actionId#"\" mismatch type")
-    //                         };
-    //                     }
-    //                 };
-    //                 case(_){
-    //                     return #err("Config of id: \""#arg.actionId#"\" could not be found")
-    //                 };
-    //             };
-    //         };
-    //         case(#claimStakingReward(arg)){
-    //             var configType : ? Config.ConfigDataType = null;
-    //             configType := Config.getSpecificConfig(arg.actionId);
- 
-    //             switch(configType){
-    //                 case(? notNull){
-    //                     switch(notNull){
-    //                         case(#action(configs)){
-    //                             //CHECK TIME CONSTRAINS
-    //                             switch(configs.timeConstraint){
-    //                                 case(? timeConstraint){
-                                        
-    //                                     //Ensure Constrain Entry exist
-    //                                     switch (Map.get(userActionInteration, phash, caller)){
-    //                                         case(null){
-    //                                             Map.set(userActionInteration, phash, caller, (1, Time.now()));
-    //                                         };
-    //                                         case(?constrainState){
-    //                                             let iterationCount = constrainState.0;
-    //                                             let startTs = constrainState.1;
-
-    //                                             if(Time.now() > startTs + timeConstraint.intervalDuration){
-    //                                                 return #err("to soon to be used");
-    //                                             };
-
-    //                                             Map.set(userActionInteration, phash, caller, (1, Time.now()));
-    //                                         };
-    //                                     };
-    //                                 };
-    //                                 case(_){};//DO NOTHING
-    //                             };
-
-    //                             //
-    //                             switch(configs.actionType){
-    //                                 case(#claimStakingReward(unwrappedActionType)){
-    //                                     let callerText = Principal.toText(caller);
-    //                                     var canister_id : Text = "";
-    //                                     switch (await worldhub.getUserCanisterId(callerText)){
-    //                                         case (#ok c){
-    //                                             canister_id := c;
-    //                                         };
-    //                                         case _ {
-    //                                         };
-    //                                     };
-
-    //                                     let caller_as_text = Principal.toText(caller);
-    //                                     let stakeHub : StakeHub = actor(ENV.stakinghub_canister_id);
-
-    //                                     let stakes = await stakeHub.getUserStakes(caller_as_text);
-
-    //                                     var foundStake : ? TStaking.Stake = null;
-
-    //                                     label stakesLoop for(stake in stakes.vals()){
-    //                                         if(stake.canister_id == arg.tokenCanister){
-    //                                             foundStake := ? stake;
-    //                                             break stakesLoop;
-    //                                         };
-    //                                     };
-                                        
-    //                                     switch(foundStake){
-    //                                         case(? unwrappedStake){
-    //                                             if(unwrappedStake.amount < unwrappedActionType.requiredAmount)  return #err("stake of id: \""#arg.tokenCanister#"\" doesnt meet amount requirement");
-    //                                             //
-    //                                             var configType : ? Config.ConfigDataType = null;
-    //                                             configType := Config.getSpecificConfig(configs.gachaRewardConfigId);
-    //                                             switch(configType){
-    //                                                 case(? notNull){
-    //                                                     switch(notNull){
-    //                                                         case(#gacha(configs)){
-    //                                                             return await processGacha(callerText, configs);
-    //                                                         };
-    //                                                         case(_){
-    //                                                             return #err("config of id: \""#configs.gachaRewardConfigId#"\" mismatch type");
-    //                                                         };
-    //                                                     };
-    //                                                 };
-    //                                                 case(_){
-    //                                                     return #err("config of id: \""#configs.gachaRewardConfigId#"\" could not be found");
-    //                                                 };
-    //                                             };
-    //                                         };
-    //                                         case(_){
-    //                                             return #err("stake of id: \""#arg.tokenCanister#"\" could not be found");
-    //                                         };
-    //                                     };
-    //                                 };
-    //                                 case(_){
-    //                                     return #err("Something went wrong, argument type \"burnNft\" mismatches config type")
-    //                                 }
-    //                             }
-    //                         };
-    //                         case(_){
-    //                             //SOMETHING WENT WRONG
-    //                             return #err("config of id: \""#arg.actionId#"\" mismatch type")
-    //                         };
-    //                     }
-    //                 };
-    //                 case(_){
-    //                     return #err("Config of id: \""#arg.actionId#"\" could not be found")
-    //                 };
-    //             };
-    //         };
-    //     }
-    // };
-
-    //Withdraw ICP/ICRC-1 tokens from our PaymentHub canister
-    public func withdrawIcp() : async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>) {
-        let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
-            withdrawIcp : shared () -> async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>);
+        var tokenid : EXT.TokenIdentifier = EXTCORE.TokenIdentifier.fromText(collection_canister_id, tokenindex);
+        let collection = actor (collection_canister_id) : actor {
+            ext_burn : (EXT.TokenIdentifier, EXT.AccountIdentifier) -> async (Result.Result<(), EXT.CommonError>);
+            extGetTokenMetadata : (EXT.TokenIndex) -> async (?EXT.Metadata);
         };
-        let res = await paymenthub.withdrawIcp();
-        return res;
-    };
+        var res : Result.Result<(), EXT.CommonError> = await collection.ext_burn(tokenid, accountId);
+        switch (res) {
+            case (#ok) {
+                //notify server using http req
+                var m : ?EXT.Metadata = await collection.extGetTokenMetadata(tokenindex);
+                var json : Text = "";
+                switch (m) {
+                    case (?md) {
+                        switch (md) {
+                            case (#fungible _) {};
+                            case (#nonfungible d) {
+                                switch (d.metadata) {
+                                    case (?x) {
+                                        switch (x) {
+                                            case (#json j) { json := j };
+                                            case (#blob _) {};
+                                            case (#data _) {};
+                                        };
+                                    };
+                                    case _ {};
+                                };
+                            };
+                        };
+                    };
+                    case _ {};
+                };
 
-    public func withdrawIcrc(token_canister_id : Text) : async (Result.Result<ICRC1.Result, { #TxErr : ICRC1.TransferError; #Err : Text }>) {
-        let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
-            withdrawIcrc : shared (Text) -> async (Result.Result<ICRC1.Result, { #TxErr : ICRC1.TransferError; #Err : Text }>);
+
+                return #ok();
+            };
+            case (#err(e)) {
+                return #err("Nft Butn, Something went wrong while burning nft");
+            };
         };
-        let res = await paymenthub.withdrawIcrc(token_canister_id);
-        return res;
+    };
+    //Payments : redirected to PaymentHub for verification and holding update.
+    public shared ({caller}) func verifyTxIcp(height : Nat64, toPrincipal : Text, fromPrincipal : Text, _amt : Nat64) : async (Result.Result<(), Text>) {
+        let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
+            verifyTxIcp : shared (Nat64, Text, Text, Nat64) -> async ({
+                #Success : Text;
+                #Err : Text;
+            });
+        };
+
+        switch (await paymenthub.verifyTxIcp(height, toPrincipal, fromPrincipal, _amt)) {
+            case (#Success s) {
+
+                return #ok();
+            };
+            case (#Err e) {
+                return #err(e);
+            };
+        };
+    };
+    public shared ({caller}) func verifyTxIcrc(index : Nat, toPrincipal : Text, fromPrincipal : Text, _amt : Nat, token_canister_id : Text) : async (Result.Result<(), Text>) {
+        let paymenthub = actor(ENV.paymenthub_canister_id) : actor {
+            verifyTxIcrc : shared (Nat, Text, Text, Nat, Text) -> async ({
+                #Success : Text;
+                #Err : Text;
+            });
+        };
+        switch (await paymenthub.verifyTxIcrc(index, toPrincipal, fromPrincipal, _amt, token_canister_id)) {
+            case (#Success s) {
+                
+                return #ok();
+            };
+            case (#Err e) {
+                return #err(e);
+            };
+        };
     };
 
-    public shared query (msg) func whoAmI() : async (Text){
-        return Principal.toText(msg.caller);
+    private func handleAction(uid : Text, actionId: Text, actionConfig : Config.ActionConfig) : async (Result.Result<TDatabase.Response, Text>){
+        var user_node_id : Text = "";
+        switch (await worldhub.getUserNodeCanisterId(uid)){
+            case (#ok c){
+                user_node_id := c;
+            };
+            case _ {
+                return #err("user node id not found");
+            };
+        };
+        
+        let userNode : UserNode = actor(user_node_id);
+
+        var result = await userNode.processActionConfig(uid, actionId, actionConfig);
+
+        switch(result){
+            case(#ok(msg)){
+                var nftsToMint = msg.2;
+                var tokensToMint = msg.3;
+                
+                //Mint Nfts //This will require to add the worldId as a minter
+                if(Array.size(nftsToMint) > 0){
+                    let accountId = AccountIdentifier.fromText(uid, null);
+                    for(item in nftsToMint.vals()) {
+                    
+                        let nftCollection : NFT = actor(item.collection);
+                        ignore nftCollection.ext_mint([(accountId,
+                        #nonfungible {
+                            name = item.name;
+                            asset = item.assetId;
+                            thumbnail = "";
+                            metadata = ? #json(item.metadata);
+                        })]);
+                    };
+                };
+                
+                //Mint Tokens
+                let icrcLedger : ICRC.Self = actor(ENV.ICRC1_Ledger);
+                for(item in tokensToMint.vals()) {
+                    //TODO: handle token minting
+                    //transfer from
+                    ignore icrcLedger.icrc2_transfer_from({ from = {owner = Principal.fromText(ENV.ICRC1_Minter); subaccount = null}; spender_subaccount = null; to = {owner = Principal.fromText(uid); subaccount = null}; amount = 1000000; fee = null; memo = null; created_at_time = null})
+                };
+            };
+            case(#err(msg)){};
+        };
+
+        return result;
+    };
+    public shared ({ caller }) func processActionEntities(actionArg: Config.ActionArg): async (Result.Result<TDatabase.Response, Text>) { 
+        //Todo: Check for each action the timeConstraint
+        switch(actionArg){
+            case(#default(arg)){
+                var configType = _getSpecificActionConfig(arg.actionId);
+ 
+                switch(configType){
+                    case(? configs){
+                        return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                    };
+                    case(_){
+                        return #err("Config of id: \""#arg.actionId#"\" could not be found")
+                    };
+                };
+            };
+            case(#burnNft(arg)){
+                var configType = _getSpecificActionConfig(arg.actionId);
+
+                switch(configType){
+                    case(? configs){
+                        switch(configs.actionPlugin){
+                            case(? #burnNft(actionPluginConfig)){
+                                switch(await burnNft(actionPluginConfig.nftCanister, arg.index, caller))
+                                {
+                                    case(#ok()){
+                                        return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                                    };
+                                    case(#err(msg)){
+                                        return #err(msg)
+                                    };
+                                }
+                            };
+                            case(_){
+                                return #err("Something went wrong, argument type \"burnNft\" mismatches config type")
+                            }
+                        }
+                    };
+                    case(_){
+                        return #err("Config of id: \""#arg.actionId#"\" could not be found")
+                    }
+                }
+            };
+            case(#spendTokens(arg)){
+                var configType = _getSpecificActionConfig(arg.actionId);
+
+                switch(configType){
+                    case(? configs){
+                        switch(configs.actionPlugin){
+                            case(? #spendTokens(actionPluginConfig)){
+                                
+                                switch(actionPluginConfig.tokenCanister){
+                                    case(null){
+                                        //ICP
+                                        switch(await verifyTxIcp(arg.hash, actionPluginConfig.toPrincipal, Principal.toText(caller) , Utils.tokenizeToIcp(actionPluginConfig.amt))){
+                                            case(#ok()){
+                                                return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                                            };
+                                            case(#err(msg)){
+                                                return #err(msg)
+                                            };
+                                        }
+                                    };
+                                    case(? tokenCanister){
+
+                                        //ICP
+                                        if(tokenCanister == ENV.Ledger){
+                                            switch(await verifyTxIcp(arg.hash, actionPluginConfig.toPrincipal, Principal.toText(caller) , Utils.tokenizeToIcp(actionPluginConfig.amt))){
+                                                case(#ok()){
+                                                    return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                                                };
+                                                case(#err(msg)){
+                                                    return #err(msg)
+                                                };
+                                            }
+                                        }
+                                        //ICRC
+                                        else{
+                                            switch(await verifyTxIcrc(Nat64.toNat(arg.hash), actionPluginConfig.toPrincipal, Principal.toText(caller), Utils.tokenizeToIcrc(actionPluginConfig.amt, actionPluginConfig.baseZeroCount), tokenCanister))
+                                            {
+                                                case(#ok()){
+                                                    return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                                                };
+                                                case(#err(msg)){
+                                                    return #err(msg)
+                                                };
+                                            }
+                                        };
+                                    }
+                                };
+                            };
+                            case(_){
+                                return #err("Something went wrong, argument type \"spendTokens\" mismatches config type")
+                            }
+                        }
+                    };
+                    case(_){
+                        return #err("Config of id: \""#arg.actionId#"\" could not be found")
+                    }
+                };
+            };
+            case(#claimStakingReward(arg)){
+                var configType = _getSpecificActionConfig(arg.actionId);
+ 
+                switch(configType){
+                    case(? configs){
+                        switch(configs.actionPlugin){
+                            case(? #claimStakingReward(actionPluginConfig)){
+
+                                let callerText = Principal.toText(caller);
+                                var canister_id : Text = "";
+                                switch (await worldhub.getUserNodeCanisterId(callerText)){
+                                    case (#ok c){
+                                        canister_id := c;
+                                    };
+                                    case _ {
+                                    };
+                                };
+
+                                let caller_as_text = Principal.toText(caller);
+                                let stakeHub : StakeHub = actor(ENV.stakinghub_canister_id);
+
+                                let stakes = await stakeHub.getUserStakes(caller_as_text);
+
+                                var foundStake : ? TStaking.Stake = null;
+
+                                label stakesLoop for(stake in stakes.vals()){
+                                    if(stake.canister_id == actionPluginConfig.tokenCanister){
+                                        foundStake := ? stake;
+                                        break stakesLoop;
+                                    };
+                                };
+                                
+                                switch(foundStake){
+                                    case(? selectedStakeData){
+                                        if(selectedStakeData.amount < Utils.tokenizeToIcrc(actionPluginConfig.requiredAmount, actionPluginConfig.baseZeroCount))  return #err("stake of id: \""#actionPluginConfig.tokenCanister#"\" doesnt meet amount requirement");
+                                        //
+                                        return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                                    };
+                                    case(_){
+                                        return #err("stake of id: \""#actionPluginConfig.tokenCanister#"\" could not be found");
+                                    };
+                                };
+                            };
+                            case(_){
+                                return #err("Something went wrong, argument type \"claimStakingReward\" mismatches config type");
+                            };
+                        };
+                    };
+                    case(_){
+                        return #err("Config of id: \""#arg.actionId#"\" could not be found")
+                    };
+                };
+            };
+        }
     };
 
-    // public shared (msg) func aaaaa(): async (entities : [TDatabase.Entity] , nftEntities : [TDatabase.Entity]) {
-    //     var output = await Gacha.generateGachaReward(Config.pastryGacha);
-    //     return output;
-    // };
+    // for permissions
+    public shared ({ caller }) func grantEntityPermission(groupId : Text, entityId : Text, principal : Text, permission : TDatabase.EntityPermission) : async () {
+        await worldhub.grantEntityPermission(groupId, entityId, principal, permission);
+    };
 
+    public shared ({ caller }) func removeEntityPermission(groupId : Text, entityId : Text, principal : Text) : async () {
+        await worldhub.removeEntityPermission(groupId, entityId, principal);
+    };
+
+    public shared ({ caller }) func grantGlobalPermission(principal : Text) : async () {
+        await worldhub.grantGlobalPermission(principal);
+    };
+
+    public shared ({ caller }) func removeGlobalPermission(principal : Text) : async () {
+        await worldhub.removeGlobalPermission(principal);
+    };
 };
