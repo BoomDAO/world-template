@@ -12,147 +12,15 @@ import Utils "../utils/Utils";
 import Int "mo:base/Int";
 
 import ENV "../utils/Env";
-import TDatabase "../types/world.types";
 import Nat64 "mo:base/Nat64";
 import Debug "mo:base/Debug";
 
+import ActionTypes "../types/action.types";
+import EntityTypes "../types/entity.types";
+
 module{
-    // ================ CONFIGS ========================= //
-    public type EntityConfig = 
-    {
-        eid: Text;
-        gid: Text;
-        name: ?Text;
-        description: ?Text;
-        imageUrl: ?Text;
-        objectUrl: ?Text;
-        rarity: ?Text;
-        duration: ?Nat;
-        tag: Text;
-        metadata: Text;
-    };
-
-    //ActionResult
-    public type entityId = Text;
-    public type groupId = Text;
-    public type worldId = ?Text;
-
-    public type attribute = Text;
-    public type quantity = Float;
-    public type duration = Nat;
-    
-    public type MintToken = 
-    {
-        name: Text;
-        description : Text; 
-        imageUrl: Text; 
-        canister : Text;
-    };
-    public type MintNft = 
-    {
-        name: Text;
-        description : Text; 
-        imageUrl: Text; 
-        canister : Text;
-        assetId: Text;
-        collection:  Text;
-        metadata: Text;
-    };
-    public type ActionOutcomeOption = {
-        weight: Float;
-        option : {
-            #mintToken : MintToken;
-            #mintNft : MintNft;
-            #setEntityAttribute : (
-                worldId,
-                groupId,
-                entityId,
-                attribute
-            );
-            #spendEntityQuantity : (
-                worldId,
-                groupId,
-                entityId,
-                quantity
-            );
-            #receiveEntityQuantity : (
-                worldId,
-                groupId,
-                entityId,
-                quantity
-            );
-            #renewEntityExpiration : (
-                worldId,
-                groupId,
-                entityId,
-                duration
-            );
-            #reduceEntityExpiration : (
-                worldId,
-                groupId,
-                entityId,
-                duration
-            );
-            #deleteEntity : (
-                worldId,
-                groupId,
-                entityId
-            );
-        }
-    };
-    public type ActionOutcome = {
-        possibleOutcomes: [ActionOutcomeOption];
-    };
-    public type ActionResult = {
-        outcomes: [ActionOutcome];
-    };
-
-    //ActionConfig
-    public type ActionArg = 
-    {
-        #default : {actionId: Text; };
-        #burnNft : {actionId: Text; index: Nat32; };
-        #spendTokens : {actionId: Text; hash: Nat64; };
-        #claimStakingReward : {actionId: Text; };
-    };
-
-    public type ActionPlugin = 
-    {
-        #burnNft : {nftCanister: Text;};
-        #spendTokens : {tokenCanister: ? Text; amt: Float; baseZeroCount: Nat;  toPrincipal : Text; };
-        #claimStakingReward : { requiredAmount : Float; baseZeroCount: Nat; tokenCanister: Text; };
-    };
-    public type ActionConstraint = 
-    {
-        timeConstraint: ? {
-            intervalDuration: Nat; 
-            actionsPerInterval: Nat; 
-        };
-        entityConstraint : ? [{ 
-            worldId: Text; 
-            groupId: Text; 
-            entityId: Text; 
-            equalToAttribute: ?Text; 
-            greaterThanOrEqualQuantity: ?Float; 
-            lessThanQuantity: ?Float; 
-            notExpired: ?Bool
-        }];
-    };
-    public type ActionConfig = 
-    {
-        aid : Text;
-        name : ?Text;
-        description : ?Text;
-        tag : ?Text;
-        actionPlugin: ?ActionPlugin;
-        actionConstraint: ?ActionConstraint;
-        actionResult: ActionResult;
-    };
-
-    //ConfigDataType
-
-    public type EntityConfigs = [EntityConfig]; 
-    public type ActionConfigs = [ActionConfig]; 
+    public type EntityConfigs = [EntityTypes.EntityConfig]; 
+    public type ActionConfigs = [ActionTypes.ActionConfig]; 
     
     public let entityConfigs : EntityConfigs = [      
         // //ITEMS
@@ -281,16 +149,15 @@ module{
         //// add more items here...
     ];
     public let actionConfigs : ActionConfigs = [
+        //STAKE ICP
         { 
             aid = "stakeIcp";
             name = ?"Stake Icp";
             description = ?"You can try receive reward over time for staking at least 0.005 ICP";
             tag = ?"Claim Stake";
-            actionPlugin = ? #claimStakingReward 
+            actionPlugin = ? #claimStakingRewardIcp 
             { 
                 requiredAmount = 0.005;//0.005 ICP
-                baseZeroCount = 100_000_000;
-                tokenCanister = ENV.Ledger
             };
             actionConstraint = ? {
                 timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
@@ -306,16 +173,17 @@ module{
                 ]
             };
         },
+        //STAKE ICRC
         { 
             aid = "stakeIcrc";
             name = ?"Stake Icrc";
             description = ?"You can try receive reward over time for staking at least 0.005 ICP";
             tag = ?"Claim Stake";
-            actionPlugin = ? #claimStakingReward 
+            actionPlugin = ? #claimStakingRewardIcrc 
             { 
                 requiredAmount = 0.00005;//0.005 ICRC
                 baseZeroCount = 100_000_000;
-                tokenCanister = ENV.ICRC1_Ledger;
+                canister = ENV.ICRC1_Ledger;
             };
             actionConstraint = ? {
                 timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
@@ -331,12 +199,38 @@ module{
                 ]
             };
         },
+        //STAKE NFT
+        { 
+            aid = "stakeNft";
+            name = ?"Stake Nft";
+            description = ?"You can try receive reward over time for staking at least 1 Nft";
+            tag = ?"Claim Stake";
+            actionPlugin = ? #claimNftStakingRewardNft 
+            { 
+                requiredAmount = 1;//0.005 ICRC
+                canister = ENV.Nft_Canister;
+            };
+            actionConstraint = ? {
+                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                entityConstraint = null;
+            };
+            actionResult = {
+                outcomes = [
+                    {
+                        possibleOutcomes = [
+                            { option = #receiveEntityQuantity (null, "", "pastry_candy_candy", 1);  weight = 100;},
+                        ]
+                    }
+                ]
+            };
+        },
+        //BURN NFT
         { 
             aid = "burnPastryRewardTiketAction";
             name = ?"Pastry Reward Spin";
             description = ?"You can burn Pastry Reward Nft to get a Pastry Reward!";
             tag = ?"BurnNft";
-            actionPlugin = ? #burnNft { nftCanister = "b5kkq-6iaaa-aaaal-qb6ga-cai"; };
+            actionPlugin = ? #burnNft { canister = "b5kkq-6iaaa-aaaal-qb6ga-cai"; };
             actionConstraint = ? {
                 timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = null;
@@ -358,12 +252,13 @@ module{
                 ]
             };
         },
+        //MINT NFT
         { 
             aid = "mint_pastry_reward_tikets_nft";
             name = ?"Mint a Pastry Reward Tikets Nft";
             description = ?"You get a \"Pastry Reward Nft\" 1 by spending just 0.0001 icp";
             tag = ?"Mint";
-            actionPlugin = ? #spendTokens { tokenCanister =  null; amt = 0.0001; baseZeroCount = 100_000_000; toPrincipal = ENV.paymenthub_canister_id };
+            actionPlugin = ? #verifyTransferIcp { amt = 0.0001; toPrincipal = ENV.paymenthub_canister_id };
             actionConstraint = ? {
                 timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = null;
@@ -387,12 +282,13 @@ module{
                 ]
             };
         },
+        //BUY ITEM1 WITH ICP
         { 
             aid = "buyItem1_Icp";
             name = ?"Item 1 Offer!";
             description = ?"You get a Item 1 by spending just 0.0001 icp";
             tag = ?"Offer";
-            actionPlugin = ? #spendTokens { tokenCanister =  null; amt = 0.0001; baseZeroCount = 100_000_000; toPrincipal = ENV.paymenthub_canister_id };
+            actionPlugin = ? #verifyTransferIcp { amt = 0.0001; toPrincipal = ENV.paymenthub_canister_id };
             actionConstraint = ? {
                 timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = null;
@@ -407,12 +303,13 @@ module{
                 ]
             };
         },
+        //BUY ITEM2 WITH ICRC
         { 
             aid = "buyItem2_Icrc";
             name = ?"Item 2 Offer!";
             description = ?"";
             tag = ?"Offer";
-            actionPlugin = ? #spendTokens { tokenCanister = ? ENV.ICRC1_Ledger; amt = 0.00001; baseZeroCount = 100_000_000; toPrincipal = ENV.paymenthub_canister_id };
+            actionPlugin = ? #verifyTransferIcrc { canister = ENV.ICRC1_Ledger; amt = 0.00001; baseZeroCount = 100_000_000; toPrincipal = ENV.paymenthub_canister_id };
             actionConstraint = ? {
                 timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = null;
@@ -427,6 +324,7 @@ module{
                 ]
             };
         },
+        //TRADE ITEM2 WITH ITEM1
         { 
             aid = "buyItem1_Item2";
             name = ?"Trade Offer";
@@ -435,69 +333,17 @@ module{
             actionPlugin = null;
             actionConstraint = ? {
                 timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = null;
-            };
-            actionResult = { 
-                outcomes = [
-                    {//Substract
-                        possibleOutcomes = [
-                            { option = #spendEntityQuantity (null, "", "item2", 1); weight = 100;},
-                        ]
-                    },
-                    {//Add
-                        possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "item1", 1); weight = 100;},
-                        ]
-                    }
-                ]
-            };
-        },
-                { 
-            aid = "buyPastrySpinNft_Item1";
-            name = ?"Buy Pastry Spin Nft";
-            description = ?"";
-            tag = ?"Offer";
-            actionPlugin = null;
-            actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = null;
-            };
-            actionResult = { 
-                outcomes = [
-                    {//Substract
-                        possibleOutcomes = [
-                            { 
-                                option = #mintNft 
-                                {
-                                    assetId = "0";
-                                    canister = "b5kkq-6iaaa-aaaal-qb6ga-cai";
-                                    collection = "NFT Ticket Test";
-                                    description = ""; 
-                                    imageUrl = ""; 
-                                    metadata = ""; 
-                                    name = ""
-                                }; 
-                                weight = 100;
-                            },
-                        ]
-                    },
-                    {//Add
-                        possibleOutcomes = [
-                            { option = #spendEntityQuantity (null, "", "item1", 1); weight = 100;},
-                        ]
-                    }
-                ]
-            };
-        },
-        { 
-            aid = "burn_pastrySpinNft";
-            name = ?"Burn Pastry Spin Nft";
-            description = ?"";
-            tag = ?"BurnNft";
-            actionPlugin = null;
-            actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = null;
+                entityConstraint = ? 
+                [{
+                    worldId = ""; 
+                    groupId = ""; 
+                    entityId = "Item2"; 
+                    equalToAttribute = null; 
+                    greaterThanOrEqualQuantity = ? 1.0; 
+                    lessThanQuantity = null; 
+                    notExpired = null;
+            
+                }];
             };
             actionResult = { 
                 outcomes = [
