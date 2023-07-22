@@ -21,13 +21,16 @@ import EntityTypes "../types/entity.types";
 module{
     public type EntityConfigs = [EntityTypes.EntityConfig]; 
     public type ActionConfigs = [ActionTypes.ActionConfig]; 
+
+    public let Nft_Canister = "6uvic-diaaa-aaaap-abgca-cai"; //Game Collection
+    public let ICRC1_Ledger = "6bszp-caaaa-aaaap-abgbq-cai"; //Game Token
     
     public let entityConfigs : EntityConfigs = [      
         // //ITEMS
         { 
-            eid = "pastry_candy_cake"; 
+            eid = "character_a"; 
             gid = "";
-            name = ?"Thicc Boy"; 
+            name = ?"CharacterA"; 
             description = ?"just an item"; 
             imageUrl = ?"";
             objectUrl = ?""; 
@@ -38,9 +41,9 @@ module{
 
         },
         { 
-            eid = "pastry_candy_candy";
+            eid = "character_b";
             gid = "";
-            name = ?"The Candy Emperor"; 
+            name = ?"CharacterB"; 
             description = ?"just an item"; 
             imageUrl = ?"";
             objectUrl = ?"";  
@@ -50,9 +53,9 @@ module{
             tag = "item skin"; 
         },
         { 
-            eid = "pastry_candy_croissant";
+            eid = "character_c";
             gid = "";
-            name = ?"Le Frenchy"; 
+            name = ?"CharacterC"; 
             description = ?"just an item"; 
             imageUrl = ?"";
             objectUrl = ?"";
@@ -62,9 +65,9 @@ module{
             tag = "item skin"; 
         },
         { 
-            eid = "pastry_candy_cupcake"; 
+            eid = "character_d"; 
             gid = "";
-            name = ?"Princess Sweet Cheeks"; 
+            name = ?"CharacterD"; 
             description = ?"just an item"; 
             imageUrl = ?"";
             objectUrl = ?"";
@@ -74,9 +77,9 @@ module{
             tag = "item skin";
         },
         { 
-            eid = "pastry_candy_donut"; 
+            eid = "character_e"; 
             gid = "";
-            name = ?"Donyatsu"; 
+            name = ?"CharacterE"; 
             description = ?"just an item"; 
             imageUrl = ?"";
             objectUrl = ?"";
@@ -86,9 +89,9 @@ module{
             tag = "item skin";
         },
         { 
-            eid = "pastry_candy_ice_cream";
+            eid = "character_f";
             gid = "";
-            name = ?"Prince Yummy Buddy"; 
+            name = ?"CharacterF"; 
             description = ?"just an item"; 
             imageUrl = ?"";
             objectUrl = ?"";
@@ -98,9 +101,9 @@ module{
             tag = "item skin";
         },
         { 
-            eid = "pastry_candy_marshmallow";
+            eid = "character_g";
             gid = "";
-            name = ?"Sugar Baby"; 
+            name = ?"CharacterG"; 
             description = ?"just an item"; 
             imageUrl = ?"";
             objectUrl = ?"";
@@ -110,9 +113,9 @@ module{
             tag = "item skin";
         },
         { 
-            eid = "pastry_candy_chocolate";
+            eid = "character_h";
             gid = "";
-            name = ?"Sir Chocobro"; 
+            name = ?"CharacterH"; 
             description = ?"just an item"; 
             imageUrl = ?"";
             objectUrl = ?"";
@@ -121,11 +124,10 @@ module{
             metadata = "";
             tag = "item skin";
         },
-
         { 
-            eid = "item1";
+            eid = "item_a";
             gid = "";
-            name = ?"Item 1"; 
+            name = ?"ItemA"; 
             description = ?"just an item"; 
             imageUrl = ?"";
             objectUrl = ?"";
@@ -135,9 +137,21 @@ module{
             tag = "item skin";
         },
         { 
-            eid = "item2";
+            eid = "item_b";
             gid = "";
-            name = ?"Item 2"; 
+            name = ?"ItemB"; 
+            description = ?"just an item"; 
+            imageUrl = ?"";
+            objectUrl = ?"";
+            rarity = ?"common";
+            duration = null; 
+            metadata = "";
+            tag = "item skin";
+        },
+        { 
+            eid = "item_c";
+            gid = "";
+            name = ?"ItemC"; 
             description = ?"just an item"; 
             imageUrl = ?"";
             objectUrl = ?"";
@@ -149,76 +163,78 @@ module{
         //// add more items here...
     ];
     public let actionConfigs : ActionConfigs = [
-        //STAKE ICP
+        //CLAIM STAKE ICP REWARD
         { 
             aid = "stakeIcp";
             name = ?"Stake Icp";
             description = ?"You can try receive reward over time for staking at least 0.005 ICP";
+            imageUrl = null;
             tag = ?"Claim Stake";
             actionPlugin = ? #claimStakingRewardIcp 
             { 
                 requiredAmount = 0.005;//0.005 ICP
             };
             actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = null;
             };
             actionResult = {
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "pastry_candy_cake", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null, "", "character_a", 1);  weight = 100;},
                         ]
                     }
                 ]
             };
         },
-        //STAKE ICRC
+        //CLAIM STAKE ICRC REWARD
         { 
             aid = "stakeIcrc";
             name = ?"Stake Icrc";
             description = ?"You can try receive reward over time for staking at least 0.005 ICP";
+            imageUrl = null;
             tag = ?"Claim Stake";
             actionPlugin = ? #claimStakingRewardIcrc 
             { 
                 requiredAmount = 0.00005;//0.005 ICRC
-                baseZeroCount = 100_000_000;
-                canister = ENV.ICRC1_Ledger;
+                canister = ICRC1_Ledger;
             };
             actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = null;
             };
             actionResult = {
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "pastry_candy_candy", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null, "", "character_b", 1);  weight = 100;},
                         ]
                     }
                 ]
             };
         },
-        //STAKE NFT
+        //CLAIM STAKE NFT REWARD
         { 
             aid = "stakeNft";
             name = ?"Stake Nft";
             description = ?"You can try receive reward over time for staking at least 1 Nft";
+            imageUrl = null;
             tag = ?"Claim Stake";
-            actionPlugin = ? #claimNftStakingRewardNft 
+            actionPlugin = ? #claimStakingRewardNft 
             { 
                 requiredAmount = 1;//0.005 ICRC
-                canister = ENV.Nft_Canister;
+                canister = Nft_Canister;
             };
             actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = null;
             };
             actionResult = {
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "pastry_candy_candy", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null, "", "character_c", 1);  weight = 100;},
                         ]
                     }
                 ]
@@ -226,41 +242,43 @@ module{
         },
         //BURN NFT
         { 
-            aid = "burnPastryRewardTiketAction";
-            name = ?"Pastry Reward Spin";
-            description = ?"You can burn Pastry Reward Nft to get a Pastry Reward!";
+            aid = "burn_nft_tiket";
+            name = ?"Burn a Test NFT!";
+            description = ?"Burn a Test NFT to get a random reward in return!";
+            imageUrl = null;
             tag = ?"BurnNft";
-            actionPlugin = ? #burnNft { canister = "b5kkq-6iaaa-aaaal-qb6ga-cai"; };
+            actionPlugin = ? #burnNft { canister = Nft_Canister; };
             actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = null;
             };
             actionResult = {
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "pastry_candy_cake", 1);  weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "pastry_candy_candy", 1); weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "pastry_candy_chocolate", 1);  weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "pastry_candy_croissant", 1);  weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "pastry_candy_cupcake", 1);  weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "pastry_candy_donut", 1);  weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "pastry_candy_ice_cream", 1);  weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "pastry_candy_marshmallow", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null, "", "character_a", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "character_b", 1); weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "character_c", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "character_d", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "character_e", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "character_f", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "character_g", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity (null,"", "character_h", 1);  weight = 100;},
                         ]
                     }
                 ]
             };
         },
-        //MINT NFT
+        //SPEND ICP TO MINT NFT 
         { 
-            aid = "mint_pastry_reward_tikets_nft";
-            name = ?"Mint a Pastry Reward Tikets Nft";
-            description = ?"You get a \"Pastry Reward Nft\" 1 by spending just 0.0001 icp";
+            aid = "spend_icp_to_mint_test_nft";
+            name = ?"Buy a Test NFT!";
+            description = ?"Spend 0.001 ICP to get a \"Test NFT\" ";
+            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = ?"Mint";
-            actionPlugin = ? #verifyTransferIcp { amt = 0.0001; toPrincipal = ENV.paymenthub_canister_id };
+            actionPlugin = ? #verifyTransferIcp { amt = 0.001; toPrincipal = ENV.PaymentHubCanisterId };
             actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = null;
             };
             actionResult = { 
@@ -268,14 +286,70 @@ module{
                     {
                         possibleOutcomes = [
                             { option = #mintNft {
-                                name = "Tiket";
-                                description = "None"; 
+                                index = null;
+                                name = "Test Nft";
+                                description = "Spend 0.001 ICP to purchase a Test NFT."; 
                                 imageUrl = ""; 
-                                canister  = "b5kkq-6iaaa-aaaal-qb6ga-cai";
-                                assetId = "Pastry Reward Tikets";
-                                collection = "Pastry Reward";
-                                metadata = "{\"usage\":\"pastry-variable-offer\"}";
-
+                                canister  = Nft_Canister;
+                                assetId = "testAsset";
+                                collection = "Nft Reward";
+                                metadata = "{\"tag\":\"random-nft-reward\"}";
+                            }; weight = 100;},
+                        ]
+                    }
+                ]
+            };
+        },
+        //Mint a Free Test NFT
+        { 
+            aid = "mint_test_nft";
+            name = ?"Mint a free Test NFT!";
+            description = ?"Mint a Free Test NFT";
+            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
+            tag = null;
+            actionPlugin = null;
+            actionConstraint = ? {
+                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                entityConstraint = null;
+            };
+            actionResult = { 
+                outcomes = [
+                    {
+                        possibleOutcomes = [
+                            { option = #mintNft {
+                                index = null;
+                                name = "Test Nft";
+                                description = "Mint a free Test NFT"; 
+                                imageUrl = ""; 
+                                canister  = Nft_Canister;
+                                assetId = "testAsset";
+                                collection = "Nft Reward";
+                                metadata = "{\"tag\":\"random-nft-reward\"}";
+                            }; weight = 100;},
+                        ]
+                    }
+                ]
+            };
+        },
+        //Mint 2 Free Test ICRC
+        { 
+            aid = "mint_test_icrc";
+            name = ?"Test ICRC";
+            description = ?"Mint 5 Free Test Token";
+            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
+            tag = null;
+            actionPlugin = null;
+            actionConstraint = ? {
+                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                entityConstraint = null;
+            };
+            actionResult = { 
+                outcomes = [
+                    {
+                        possibleOutcomes = [
+                            { option = #mintToken {
+                                quantity = 5;
+                                canister = ICRC1_Ledger;
                             }; weight = 100;},
                         ]
                     }
@@ -285,19 +359,20 @@ module{
         //BUY ITEM1 WITH ICP
         { 
             aid = "buyItem1_Icp";
-            name = ?"Item 1 Offer!";
-            description = ?"You get a Item 1 by spending just 0.0001 icp";
+            name = ?"ItemA Offer!";
+            description = ?"Spend 0.001 ICP to receive an ItemA";
+            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = ?"Offer";
-            actionPlugin = ? #verifyTransferIcp { amt = 0.0001; toPrincipal = ENV.paymenthub_canister_id };
+            actionPlugin = ? #verifyTransferIcp { amt = 0.001; toPrincipal = ENV.PaymentHubCanisterId };
             actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = null;
             };
             actionResult = { 
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "item1", 1); weight = 100;},
+                            { option = #receiveEntityQuantity (null, "", "item_a", 1); weight = 100;},
                         ]
                     }
                 ]
@@ -306,38 +381,40 @@ module{
         //BUY ITEM2 WITH ICRC
         { 
             aid = "buyItem2_Icrc";
-            name = ?"Item 2 Offer!";
-            description = ?"";
+            name = ?"ItemB Offer!";
+            description = ?"Spend 1 Test Token to receive an ItemB";
+            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = ?"Offer";
-            actionPlugin = ? #verifyTransferIcrc { canister = ENV.ICRC1_Ledger; amt = 0.00001; baseZeroCount = 100_000_000; toPrincipal = ENV.paymenthub_canister_id };
+            actionPlugin = ? #verifyTransferIcrc { canister = ICRC1_Ledger; amt = 1; toPrincipal = ENV.PaymentHubCanisterId };
             actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = null;
             };
             actionResult = { 
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "item2", 1); weight = 100;},
+                            { option = #receiveEntityQuantity (null, "", "item_b", 1); weight = 100;},
                         ]
                     }
                 ]
             };
         },
-        //TRADE ITEM2 WITH ITEM1
+        //TRADE ITEM1 WITH ITEM3
         { 
-            aid = "buyItem1_Item2";
+            aid = "buyItem3_Item1";
             name = ?"Trade Offer";
-            description = ?"";
+            description = ?"Trade an in-game ItemA for an ItemC";
+            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = ?"Offer";
             actionPlugin = null;
             actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 120_000_000_000; actionsPerInterval = 1; };
+                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = ? 
                 [{
-                    worldId = ""; 
+                    worldId = "6irst-uiaaa-aaaap-abgaa-cai"; 
                     groupId = ""; 
-                    entityId = "Item2"; 
+                    entityId = "item_a"; 
                     equalToAttribute = null; 
                     greaterThanOrEqualQuantity = ? 1.0; 
                     lessThanQuantity = null; 
@@ -349,12 +426,12 @@ module{
                 outcomes = [
                     {//Substract
                         possibleOutcomes = [
-                            { option = #spendEntityQuantity (null, "", "item2", 1); weight = 100;},
+                            { option = #spendEntityQuantity (?"6irst-uiaaa-aaaap-abgaa-cai", "", "item_a", 1); weight = 100;},
                         ]
                     },
                     {//Add
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "item1", 1); weight = 100;},
+                            { option = #receiveEntityQuantity (?"6irst-uiaaa-aaaap-abgaa-cai", "", "item_c", 1); weight = 100;},
                         ]
                     }
                 ]

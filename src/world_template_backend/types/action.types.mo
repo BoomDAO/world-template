@@ -25,6 +25,7 @@ module{
     public type duration = Nat;
 
     public type Action = {
+        actionId : Text;
         intervalStartTs : Nat;
         actionCount : Nat;
     };
@@ -35,7 +36,7 @@ module{
         #burnNft : {actionId: Text; index: Nat32; };
         #verifyTransferIcp : {actionId: Text; blockIndex: Nat64; };
         #verifyTransferIcrc : {actionId: Text; blockIndex: Nat; };
-        #claimNftStakingRewardNft : {actionId: Text; };
+        #claimStakingRewardNft : {actionId: Text; };
         #claimStakingRewardIcp : {actionId: Text; };
         #claimStakingRewardIcrc : {actionId: Text; };
     };
@@ -43,15 +44,13 @@ module{
     public type MintToken = 
     {
         quantity : Float;
-        baseZeroCount : Nat;
         canister : Text;
     };
     public type MintNft = 
     {
-        name : Text;
+        index : ? Nat32;
         canister : Text;
         assetId: Text;
-        collection:  Text;
         metadata: Text;
     };
     public type ActionOutcomeOption = {
@@ -107,10 +106,10 @@ module{
     {
         #burnNft : { canister: Text;};
         #verifyTransferIcp : { amt: Float; toPrincipal : Text; };
-        #verifyTransferIcrc : {canister: Text; amt: Float; baseZeroCount: Nat;  toPrincipal : Text; };
-        #claimNftStakingRewardNft : { canister: Text; requiredAmount : Nat; };
+        #verifyTransferIcrc : {canister: Text; amt: Float; toPrincipal : Text; };
+        #claimStakingRewardNft : { canister: Text; requiredAmount : Nat; };
         #claimStakingRewardIcp : { requiredAmount : Float;  };
-        #claimStakingRewardIcrc : { canister: Text; requiredAmount : Float; baseZeroCount: Nat; };
+        #claimStakingRewardIcrc : { canister: Text; requiredAmount : Float; };
     };
     public type ActionConstraint = 
     {
@@ -133,6 +132,7 @@ module{
         aid : Text;
         name : ?Text;
         description : ?Text;
+        imageUrl: ?Text;
         tag : ?Text;
         actionPlugin: ?ActionPlugin;
         actionConstraint: ?ActionConstraint;
