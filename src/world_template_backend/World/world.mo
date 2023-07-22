@@ -54,7 +54,7 @@ actor class WorldTemplate(owner : Principal) = this {
 
     //Interfaces
     type UserNode = actor {
-        processAction : shared (uid : TGlobal.userId, aid : TGlobal.actionId, actionConstraint : ?TAction.ActionConstraint, outcomes : [TAction.ActionOutcomeOption]) -> async (Result.Result<(), Text>);
+        processAction : shared (uid : TGlobal.userId, aid : TGlobal.actionId, actionConfig : TAction.ActionConfig) -> async (Result.Result<TAction.ActionResponse, Text>);
         getAllUserWorldEntities : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TEntity.Entity], Text>);
         getAllUserWorldActions : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TAction.Action], Text>);
     };
@@ -435,39 +435,7 @@ actor class WorldTemplate(owner : Principal) = this {
         };
     };
 
-    //HERE:
-    private func generateActionResultOutcomes(actionResult : TAction.ActionResult) : async ([TAction.ActionOutcomeOption]) {
-        var outcomes = Buffer.Buffer<TAction.ActionOutcomeOption>(0);
-        for (outcome in actionResult.outcomes.vals()) {
-        var accumulated_weight : Float = 0;
-
-        //A) Compute total weight on the current outcome
-        for (outcomeOption in outcome.possibleOutcomes.vals()) {
-            accumulated_weight += outcomeOption.weight;
-        };
-
-        //B) Gen a random number using the total weight as max value
-        let rand_perc = await RandomUtil.get_random_perc();
-        var dice_outcome = (rand_perc * 1.0 * accumulated_weight);
-
-        //C Pick outcomes base on their weights
-        label outcome_loop for (outcomeOption in outcome.possibleOutcomes.vals()) {
-            let outcome_weight = outcomeOption.weight;
-            if (outcome_weight >= dice_outcome) {
-            outcomes.add(outcomeOption);
-            break outcome_loop;
-            } else {
-            dice_outcome -= outcome_weight;
-            };
-        };
-        };
-
-        return Buffer.toArray(outcomes);
-    };
-    private func handleAction(uid : Text, actionId: Text, actionConfig : TAction.ActionConfig) : async (Result.Result<[TAction.ActionOutcomeOption], Text>){
-        
-        let outcomes : [TAction.ActionOutcomeOption] = await generateActionResultOutcomes(actionConfig.actionResult);
-
+    private func handleAction(uid : Text, actionId: Text, actionConfig : TAction.ActionConfig) : async (Result.Result<TAction.ActionResponse, Text>){
         var userNodeId : Text = "2vxsx-fae";
         switch (await worldHub.getUserNodeCanisterId(uid)){
             case (#ok c){
@@ -480,93 +448,82 @@ actor class WorldTemplate(owner : Principal) = this {
         
         let userNode : UserNode = actor(userNodeId);
 
-        var containsAnyToken = false;
-        label outcomeLoop for(outcome in outcomes.vals()){
-            switch (outcome.option) {
-                case (#mintNft val){
-                    containsAnyToken := true;
-                    break outcomeLoop;
-                };
-                case (#mintToken val){
-                    containsAnyToken := true;
-                    break outcomeLoop;
-                };
-                case _ {
-                };
-            };
-        };
-
-        if(containsAnyToken == true){
-            var result = await userNode.processAction(uid, actionId, actionConfig.actionConstraint, outcomes);
+        var result = await userNode.processAction(uid, actionId, actionConfig);
         
-            switch(result){
-                case(#ok(msg)){                
-                    //Mint Nfts //This will require to add the worldId as a minter
+        switch(result){
+            case(#ok(msg)){
+                var mintedNfts = Buffer.Buffer<TAction.MintNft>(0);
+                var nftsToMint = msg.2;
+                var tokensToMint = msg.3;
+                
+                //Mint Nfts //This will require to add the worldId as a minter
+                if(Array.size(nftsToMint) > 0){
                     let accountId : Text = AccountIdentifier.fromText(uid, null);
-                    for(outcome in outcomes.vals()) {
+                    for(item in nftsToMint.vals()) {
+                    
+                        let nftCollection : NFT = actor(item.canister);
 
-                        switch (outcome.option) {
-                            case (#mintNft val){
+                        var mintResult = await nftCollection.ext_mint([(accountId,
+                        #nonfungible {
+                            name = "";
+                            asset = item.assetId;
+                            thumbnail = item.assetId;
+                            metadata = ? #json(item.metadata);
+                        })]);
 
-                                let nftCollection : NFT = actor(val.canister);
-                                var mintResult = await nftCollection.ext_mint([(accountId,
-                                #nonfungible {
-                                    name = "";
-                                    asset = val.assetId;
-                                    thumbnail = val.assetId;
-                                    metadata = ? #json(val.metadata);
-                                })]);
+                        var mintedNft = {
+                            index = ? mintResult[0]; 
+                            canister = item.canister; 
+                            assetId = item.assetId; 
+                            metadata = item.metadata    
                             };
-                            case (#mintToken val){
-                                //
-                                let icrcLedger : ICRC.Self = actor(val.canister);
-                                let fee = await tokenFee_(val.canister);
-                                let decimals = await tokenDecimal_(val.canister);
-
-                                var transferResult = await icrcLedger.icrc1_transfer({
-                                    to  = {owner = Principal.fromText(uid); subaccount = null};
-                                    fee = ? fee;
-                                    memo = ? []; 
-                                    from_subaccount = null;
-                                    created_at_time = null;
-                                    amount = Utils.convertToBaseUnit(val.quantity, decimals);
-                                });
-
-                                switch(transferResult){
-                                    case (#Err errorType){
-                                        switch(errorType){
-                                            case(#GenericError error){ return #err("GenericError")};
-                                            case(#TemporarilyUnavailable error){return #err("TemporarilyUnavailable")};
-                                            case(#BadBurn error){return #err("BadBurn")};
-                                            case(#Duplicate error){return #err("Duplicate")};
-                                            case(#BadFee error){return #err("BadFee")};
-                                            case(#CreatedInFuture error){return #err("CreatedInFuture")};
-                                            case(#TooOld error){return #err("TooOld")}; 
-                                            case(#InsufficientFunds error){return #err("InsufficientFunds")}; 
-                                        }
-                                    };
-                                    case(_){};
-                                }
-                                //
-                            };
-                            case _ {
-                            };
-                        };
+                        mintedNfts.add(mintedNft);
                     };
                 };
-                case(#err(msg)){
-                    return #err(msg);
-                };
-            };
-        }
-        else{
-            ignore userNode.processAction(uid, actionId, actionConfig.actionConstraint, outcomes);
-        };
+                
+                //Mint Tokens
+                for(item in tokensToMint.vals()) {
+                    //transfer from
+                    let icrcLedger : ICRC.Self = actor(item.canister);
 
-        return #ok(outcomes);
+                    let fee = await tokenFee_(item.canister);
+                    let decimals = await tokenDecimal_(item.canister);
+
+                    var transferResult = await icrcLedger.icrc1_transfer({
+                        to  = {owner = Principal.fromText(uid); subaccount = null};
+                        fee = ? fee;
+                        memo = ? []; 
+                        from_subaccount = null;
+                        created_at_time = null;
+                        amount = Utils.convertToBaseUnit(item.quantity, decimals);
+                    });
+
+                    switch(transferResult){
+                        case (#Err errorType){
+                            switch(errorType){
+                                case(#GenericError error){ return #err("GenericError")};
+                                case(#TemporarilyUnavailable error){return #err("TemporarilyUnavailable")};
+                                case(#BadBurn error){return #err("BadBurn")};
+                                case(#Duplicate error){return #err("Duplicate")};
+                                case(#BadFee error){return #err("BadFee")};
+                                case(#CreatedInFuture error){return #err("CreatedInFuture")};
+                                case(#TooOld error){return #err("TooOld")}; 
+                                case(#InsufficientFunds error){return #err("InsufficientFunds")}; 
+                            }
+                        };
+                        case(_){};
+                    }
+                };
+
+                return #ok((msg.0, msg.1, Buffer.toArray(mintedNfts), msg.3));
+            };
+            case(#err(msg)){
+                return #err(msg);
+            };
+        };
     };
     
-    public shared ({ caller }) func processAction(actionArg: TAction.ActionArg): async (Result.Result<[TAction.ActionOutcomeOption], Text>) { 
+    public shared ({ caller }) func processAction(actionArg: TAction.ActionArg): async (Result.Result<TAction.ActionResponse, Text>) { 
         //Todo: Check for each action the timeConstraint
         switch(actionArg){
             case(#default(arg)){
