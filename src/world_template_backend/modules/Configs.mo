@@ -395,8 +395,8 @@ module{
         //TRADE ITEM1 WITH ITEM3
         { 
             aid = "buyItem3_Item1";
-            name = ?"Trade Offer";
-            description = ?"Trade an in-game ItemA for an ItemC";
+            name = ?"Trading";
+            description = ?"Trade an in-game ItemB for an ItemC";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = ?"Offer";
             actionPlugin = null;
@@ -406,7 +406,7 @@ module{
                 [{
                     worldId = "6irst-uiaaa-aaaap-abgaa-cai"; 
                     groupId = ""; 
-                    entityId = "item_a"; 
+                    entityId = "item_b"; 
                     equalToAttribute = null; 
                     greaterThanOrEqualQuantity = ? 1.0; 
                     lessThanQuantity = null; 
@@ -418,7 +418,7 @@ module{
                 outcomes = [
                     {//Substract
                         possibleOutcomes = [
-                            { option = #spendEntityQuantity (?"6irst-uiaaa-aaaap-abgaa-cai", "", "item_a", 1); weight = 100;},
+                            { option = #spendEntityQuantity (?"6irst-uiaaa-aaaap-abgaa-cai", "", "item_b", 1); weight = 100;},
                         ]
                     },
                     {//Add
