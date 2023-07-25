@@ -50,11 +50,12 @@ import Config "../modules/Configs";
 actor class WorldTemplate(owner : Principal) = this {
     private stable var tokens_decimals : Trie.Trie<Text, Nat8> = Trie.empty();
     private stable var tokens_fees : Trie.Trie<Text, Nat> = Trie.empty();
+    private stable var total_nft_count : Trie.Trie<Text, Nat32> = Trie.empty();
     private func WorldId() : Principal = Principal.fromActor(this);
 
     //Interfaces
     type UserNode = actor {
-        processAction : shared (uid : TGlobal.userId, aid : TGlobal.actionId, actionConfig : TAction.ActionConfig) -> async (Result.Result<TAction.ActionResponse, Text>);
+        processAction : shared (uid : TGlobal.userId, aid : TGlobal.actionId, actionConstraint : ?TAction.ActionConstraint, outcomes : [TAction.ActionOutcomeOption]) -> async (Result.Result<[TEntity.Entity], Text>);
         getAllUserWorldEntities : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TEntity.Entity], Text>);
         getAllUserWorldActions : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TAction.Action], Text>);
     };
@@ -84,7 +85,7 @@ actor class WorldTemplate(owner : Principal) = this {
                 #Err : Text;
         });
     };
-    let paymentHub : PaymentHub = actor(ENV.StakingHubCanisterId);
+    let paymentHub : PaymentHub = actor(ENV.PaymentHubCanisterId);
 
     type ICP = actor {
         transfer : shared ICP.TransferArgs -> async ICP.TransferResult;
@@ -99,7 +100,7 @@ actor class WorldTemplate(owner : Principal) = this {
 
     //stable memory
     private stable var _owner : Text = Principal.toText(owner);
-    private stable var _admins : [Text] = [Principal.toText(owner)];
+    private stable var _admins : [Text] = [Principal.toText(owner), "2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"]; //here hitesh principal is temporary
 
     //Configs
     private var entityConfigs = Buffer.Buffer<TEntity.EntityConfig>(0);
@@ -364,44 +365,16 @@ actor class WorldTemplate(owner : Principal) = this {
         return await userNode.getAllUserWorldEntities(uid, Principal.toText(worldId))
     };
     //Burn and Mint NFT's
-    private shared (msg) func burnNft(collectionCanisterId : Text, tokenindex : EXT.TokenIndex, uid : Principal) : async (Result.Result<(), Text>) {
+    private func burnNft_(collectionCanisterId : Text, tokenindex : EXT.TokenIndex, uid : Principal) : async (Result.Result<(), Text>) {
         let accountId : Text = AccountIdentifier.fromPrincipal(uid, null);
-
         if(accountId == "") return #err("Issue getting aid from uid");
-
         var tokenid : EXT.TokenIdentifier = EXTCORE.TokenIdentifier.fromText(collectionCanisterId, tokenindex);
         let collection = actor (collectionCanisterId) : actor {
             ext_burn : (EXT.TokenIdentifier, EXT.AccountIdentifier) -> async (Result.Result<(), EXT.CommonError>);
-            extGetTokenMetadata : (EXT.TokenIndex) -> async (?EXT.Metadata);
         };
         var res : Result.Result<(), EXT.CommonError> = await collection.ext_burn(tokenid, accountId);
         switch (res) {
-            case (#ok) {
-                //notify server using http req
-                var m : ?EXT.Metadata = await collection.extGetTokenMetadata(tokenindex);
-                var json : Text = "";
-                switch (m) {
-                    case (?md) {
-                        switch (md) {
-                            case (#fungible _) {};
-                            case (#nonfungible d) {
-                                switch (d.metadata) {
-                                    case (?x) {
-                                        switch (x) {
-                                            case (#json j) { json := j };
-                                            case (#blob _) {};
-                                            case (#data _) {};
-                                        };
-                                    };
-                                    case _ {};
-                                };
-                            };
-                        };
-                    };
-                    case _ {};
-                };
-
-
+            case (#ok _) {
                 return #ok();
             };
             case (#err(e)) {
@@ -410,7 +383,7 @@ actor class WorldTemplate(owner : Principal) = this {
         };
     };
     //Payments : redirected to PaymentHub for verification and holding update.
-    private shared ({caller}) func verifyTxIcp(blockIndex : Nat64, toPrincipal : Text, fromPrincipal : Text, amt : Nat64) : async (Result.Result<(), Text>) {
+    private func verifyTxIcp_(blockIndex : Nat64, toPrincipal : Text, fromPrincipal : Text, amt : Nat64) : async (Result.Result<(), Text>) {
 
         switch (await paymentHub.verifyTxIcp(blockIndex, toPrincipal, fromPrincipal, amt)) {
             case (#Success s) {
@@ -422,7 +395,7 @@ actor class WorldTemplate(owner : Principal) = this {
             };
         };
     };
-    private shared ({caller}) func verifyTxIcrc(blockIndex : Nat, toPrincipal : Text, fromPrincipal : Text, amt : Nat, tokenCanisterId : Text) : async (Result.Result<(), Text>) {
+    private func verifyTxIcrc_(blockIndex : Nat, toPrincipal : Text, fromPrincipal : Text, amt : Nat, tokenCanisterId : Text) : async (Result.Result<(), Text>) {
 
         switch (await paymentHub.verifyTxIcrc(blockIndex, toPrincipal, fromPrincipal, amt, tokenCanisterId)) {
             case (#Success s) {
@@ -435,7 +408,39 @@ actor class WorldTemplate(owner : Principal) = this {
         };
     };
 
-    private func handleAction(uid : Text, actionId: Text, actionConfig : TAction.ActionConfig) : async (Result.Result<TAction.ActionResponse, Text>){
+    //Process Action
+    private func generateActionResultOutcomes_(actionResult : TAction.ActionResult) : async ([TAction.ActionOutcomeOption]) {
+        var outcomes = Buffer.Buffer<TAction.ActionOutcomeOption>(0);
+        for (outcome in actionResult.outcomes.vals()) {
+        var accumulated_weight : Float = 0;
+
+        //A) Compute total weight on the current outcome
+        for (outcomeOption in outcome.possibleOutcomes.vals()) {
+            accumulated_weight += outcomeOption.weight;
+        };
+
+        //B) Gen a random number using the total weight as max value
+        let rand_perc = await RandomUtil.get_random_perc();
+        var dice_outcome = (rand_perc * 1.0 * accumulated_weight);
+
+        //C Pick outcomes base on their weights
+        label outcome_loop for (outcomeOption in outcome.possibleOutcomes.vals()) {
+            let outcome_weight = outcomeOption.weight;
+            if (outcome_weight >= dice_outcome) {
+            outcomes.add(outcomeOption);
+            break outcome_loop;
+            } else {
+            dice_outcome -= outcome_weight;
+            };
+        };
+        };
+
+        return Buffer.toArray(outcomes);
+    };
+    private func handleOutcomes_(uid : Text, actionId: Text, actionConfig : TAction.ActionConfig) : async (Result.Result<[TAction.ActionOutcomeOption], Text>){
+        
+        let outcomes : [TAction.ActionOutcomeOption] = await generateActionResultOutcomes_(actionConfig.actionResult);
+
         var userNodeId : Text = "2vxsx-fae";
         switch (await worldHub.getUserNodeCanisterId(uid)){
             case (#ok c){
@@ -448,82 +453,121 @@ actor class WorldTemplate(owner : Principal) = this {
         
         let userNode : UserNode = actor(userNodeId);
 
-        var result = await userNode.processAction(uid, actionId, actionConfig);
-        
-        switch(result){
-            case(#ok(msg)){
-                var mintedNfts = Buffer.Buffer<TAction.MintNft>(0);
-                var nftsToMint = msg.2;
-                var tokensToMint = msg.3;
-                
-                //Mint Nfts //This will require to add the worldId as a minter
-                if(Array.size(nftsToMint) > 0){
-                    let accountId : Text = AccountIdentifier.fromText(uid, null);
-                    for(item in nftsToMint.vals()) {
-                    
-                        let nftCollection : NFT = actor(item.canister);
+        ignore userNode.processAction(uid, actionId, actionConfig.actionConstraint, outcomes);
 
-                        var mintResult = await nftCollection.ext_mint([(accountId,
-                        #nonfungible {
-                            name = "";
-                            asset = item.assetId;
-                            thumbnail = item.assetId;
-                            metadata = ? #json(item.metadata);
-                        })]);
+        let accountId : Text = AccountIdentifier.fromText(uid, null);
 
-                        var mintedNft = {
-                            index = ? mintResult[0]; 
-                            canister = item.canister; 
-                            assetId = item.assetId; 
-                            metadata = item.metadata    
-                            };
-                        mintedNfts.add(mintedNft);
+        var processedResult = Buffer.Buffer<TAction.ActionOutcomeOption>(0);
+
+        var nftsToMint : Trie.Trie<Text, Buffer.Buffer<(EXT.AccountIdentifier, EXT.Metadata)>>  = Trie.empty();
+
+        //Mint Tokens and add them along with entities to the return value
+        for(outcome in outcomes.vals()) {
+            switch (outcome.option) {
+                case (#mintNft val){ 
+                    let nftCollection : NFT = actor(val.canister);
+                    switch (Trie.find(total_nft_count, Utils.keyT(val.canister), Text.equal)) {
+                        case (?collectionNftCount){
+                            ignore nftCollection.ext_mint([(accountId,
+                            #nonfungible {
+                                name = "";
+                                asset = val.assetId;
+                                thumbnail = val.assetId;
+                                metadata = ? #json(val.metadata);
+                            })]);
+
+                            processedResult.add({
+                                weight = outcome.weight;
+                                option = #mintNft {
+                                    index = ? collectionNftCount;
+                                    canister  = val.canister;
+                                    assetId = val.assetId;
+                                    metadata = val.metadata;
+                                };
+                            });
+
+                            ignore Trie.put(total_nft_count, Utils.keyT(val.canister), Text.equal, collectionNftCount + 1);
+                        };
+                        case _ {
+
+                            var mintResult = await nftCollection.ext_mint([(accountId,
+                            #nonfungible {
+                                name = "";
+                                asset = val.assetId;
+                                thumbnail = val.assetId;
+                                metadata = ? #json(val.metadata);
+                            })]);
+                            //
+                            processedResult.add({
+                                weight = outcome.weight;
+                                option = #mintNft {
+                                    index = ? mintResult[0];
+                                    canister  = val.canister;
+                                    assetId = val.assetId;
+                                    metadata = val.metadata;
+                                };
+                            });
+
+                            ignore Trie.put(total_nft_count, Utils.keyT(val.canister), Text.equal, mintResult[0] + 1).0;
+                        };
                     };
-                };
-                
+
+                }; //DO NOTHING HERE
                 //Mint Tokens
-                for(item in tokensToMint.vals()) {
-                    //transfer from
-                    let icrcLedger : ICRC.Self = actor(item.canister);
+                case (#mintToken val){
+                    //
+                    processedResult.add(outcome);
+                    //
+                    let icrcLedger : ICRC.Self = actor(val.canister);
+                    let fee = await tokenFee_(val.canister);
+                    let decimals = await tokenDecimal_(val.canister);
 
-                    let fee = await tokenFee_(item.canister);
-                    let decimals = await tokenDecimal_(item.canister);
 
-                    var transferResult = await icrcLedger.icrc1_transfer({
+                    //IF YOU WANT TO HANDLE ERRORS COMMENT OUT THIS CODE AND UNCOMMENT OUT THE ONE BELOW
+                    ignore icrcLedger.icrc1_transfer({
                         to  = {owner = Principal.fromText(uid); subaccount = null};
                         fee = ? fee;
                         memo = ? []; 
                         from_subaccount = null;
                         created_at_time = null;
-                        amount = Utils.convertToBaseUnit(item.quantity, decimals);
+                        amount = Utils.convertToBaseUnit(val.quantity, decimals);
                     });
 
-                    switch(transferResult){
-                        case (#Err errorType){
-                            switch(errorType){
-                                case(#GenericError error){ return #err("GenericError")};
-                                case(#TemporarilyUnavailable error){return #err("TemporarilyUnavailable")};
-                                case(#BadBurn error){return #err("BadBurn")};
-                                case(#Duplicate error){return #err("Duplicate")};
-                                case(#BadFee error){return #err("BadFee")};
-                                case(#CreatedInFuture error){return #err("CreatedInFuture")};
-                                case(#TooOld error){return #err("TooOld")}; 
-                                case(#InsufficientFunds error){return #err("InsufficientFunds")}; 
-                            }
-                        };
-                        case(_){};
-                    }
-                };
+                    // var transferResult = await icrcLedger.icrc1_transfer({
+                    //     to  = {owner = Principal.fromText(uid); subaccount = null};
+                    //     fee = ? fee;
+                    //     memo = ? []; 
+                    //     from_subaccount = null;
+                    //     created_at_time = null;
+                    //     amount = Utils.convertToBaseUnit(val.quantity, decimals);
+                    // });
 
-                return #ok((msg.0, msg.1, Buffer.toArray(mintedNfts), msg.3));
-            };
-            case(#err(msg)){
-                return #err(msg);
+                    // switch(transferResult){
+                    //     case (#Err errorType){
+                    //         switch(errorType){
+                    //             case(#GenericError error){ return #err("GenericError")};
+                    //             case(#TemporarilyUnavailable error){return #err("TemporarilyUnavailable")};
+                    //             case(#BadBurn error){return #err("BadBurn")};
+                    //             case(#Duplicate error){return #err("Duplicate")};
+                    //             case(#BadFee error){return #err("BadFee")};
+                    //             case(#CreatedInFuture error){return #err("CreatedInFuture")};
+                    //             case(#TooOld error){return #err("TooOld")}; 
+                    //             case(#InsufficientFunds error){return #err("InsufficientFunds")}; 
+                    //         }
+                    //     };
+                    //     case(_){};
+                    // }
+                };
+                case _ {
+                    processedResult.add(outcome);
+                };
             };
         };
+
+        return #ok(Buffer.toArray(processedResult));
     };
     
-    public shared ({ caller }) func processAction(actionArg: TAction.ActionArg): async (Result.Result<TAction.ActionResponse, Text>) { 
+    public shared ({ caller }) func processAction(actionArg: TAction.ActionArg): async (Result.Result<[TAction.ActionOutcomeOption], Text>) { 
         //Todo: Check for each action the timeConstraint
         switch(actionArg){
             case(#default(arg)){
@@ -531,7 +575,7 @@ actor class WorldTemplate(owner : Principal) = this {
  
                 switch(configType){
                     case(? configs){
-                        return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
                     };
                     case(_){
                         return #err("Config of id: \""#arg.actionId#"\" could not be found")
@@ -545,10 +589,10 @@ actor class WorldTemplate(owner : Principal) = this {
                     case(? configs){
                         switch(configs.actionPlugin){
                             case(? #burnNft(actionPluginConfig)){
-                                switch(await burnNft(actionPluginConfig.canister, arg.index, caller))
+                                switch(await burnNft_(actionPluginConfig.canister, arg.index, caller))
                                 {
                                     case(#ok()){
-                                        return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
                                     };
                                     case(#err(msg)){
                                         return #err(msg)
@@ -575,9 +619,9 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                 let decimals = await tokenDecimal_(ENV.Ledger);
 
-                                switch(await verifyTxIcp(arg.blockIndex, actionPluginConfig.toPrincipal, Principal.toText(caller) , Nat64.fromNat(Utils.convertToBaseUnit(actionPluginConfig.amt, decimals)))){
+                                switch(await verifyTxIcp_(arg.blockIndex, actionPluginConfig.toPrincipal, Principal.toText(caller) , Nat64.fromNat(Utils.convertToBaseUnit(actionPluginConfig.amt, decimals)))){
                                     case(#ok()){
-                                        return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
                                     };
                                     case(#err(msg)){
                                         let fee = await tokenFee_(ENV.Ledger);
@@ -606,10 +650,10 @@ actor class WorldTemplate(owner : Principal) = this {
                                 
                                 let decimals = await tokenDecimal_(actionPluginConfig.canister);
 
-                                switch(await verifyTxIcrc(arg.blockIndex, actionPluginConfig.toPrincipal, Principal.toText(caller), Utils.convertToBaseUnit(actionPluginConfig.amt, decimals), actionPluginConfig.canister))
+                                switch(await verifyTxIcrc_(arg.blockIndex, actionPluginConfig.toPrincipal, Principal.toText(caller), Utils.convertToBaseUnit(actionPluginConfig.amt, decimals), actionPluginConfig.canister))
                                 {
                                     case(#ok()){
-                                        return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
                                     };
                                     case(#err(msg)){
                                         let fee = await tokenFee_(actionPluginConfig.canister);
@@ -653,7 +697,7 @@ actor class WorldTemplate(owner : Principal) = this {
                                     case(? selectedStakeData){
                                         if(selectedStakeData.amount < actionPluginConfig.requiredAmount)  return #err("stake of id: \""#actionPluginConfig.canister#"\" doesnt meet amount requirement");
                                         //
-                                        return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
                                     };
                                     case(_){
                                         return #err("nft stake of id: \""#actionPluginConfig.canister#"\" could not be found");
@@ -698,7 +742,7 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                         if(selectedStakeData.amount < Utils.convertToBaseUnit(actionPluginConfig.requiredAmount, decimals))  return #err("icp stake doesnt meet amount requirement");
                                         //
-                                        return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
                                     };
                                     case(_){
                                         return #err("icp stake could not be found");
@@ -743,7 +787,7 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                         if(selectedStakeData.amount < Utils.convertToBaseUnit(actionPluginConfig.requiredAmount, decimals))  return #err("stake of id: \""#actionPluginConfig.canister#"\" doesnt meet amount requirement");
                                         //
-                                        return await handleAction(Principal.toText(caller), arg.actionId, configs);
+                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
                                     };
                                     case(_){
                                         return #err("icrc stake of id: \""#actionPluginConfig.canister#"\" could not be found");
