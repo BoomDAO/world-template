@@ -182,7 +182,7 @@ module{
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "character_a", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_a"; quantity =  1;};  weight = 100;},
                         ]
                     }
                 ]
@@ -208,7 +208,7 @@ module{
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "character_b", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_b"; quantity =  1;};  weight = 100;},
                         ]
                     }
                 ]
@@ -234,7 +234,7 @@ module{
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "character_c", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_c"; quantity =  1;};  weight = 100;},
                         ]
                     }
                 ]
@@ -256,14 +256,14 @@ module{
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "character_a", 1);  weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "character_b", 1); weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "character_c", 1);  weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "character_d", 1);  weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "character_e", 1);  weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "character_f", 1);  weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "character_g", 1);  weight = 100;},
-                            { option = #receiveEntityQuantity (null,"", "character_h", 1);  weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_a"; quantity =  1;};  weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_b"; quantity =  1;}; weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_c"; quantity =  1;};  weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_d"; quantity =  1;};  weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_e"; quantity =  1;};  weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_f"; quantity =  1;};  weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_g"; quantity =  1;};  weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_h"; quantity =  1;};  weight = 100;},
                         ]
                     }
                 ]
@@ -287,8 +287,12 @@ module{
                         possibleOutcomes = [
                             { option = #mintNft {
                                 index = null;
+                                name = "Test Nft";
+                                description = "Spend 0.001 ICP to purchase a Test NFT."; 
+                                imageUrl = ""; 
                                 canister  = Nft_Canister;
                                 assetId = "testAsset";
+                                collection = "Nft Reward";
                                 metadata = "{\"tag\":\"random-nft-reward\"}";
                             }; weight = 100;},
                         ]
@@ -314,8 +318,12 @@ module{
                         possibleOutcomes = [
                             { option = #mintNft {
                                 index = null;
+                                name = "Test Nft";
+                                description = "Mint a free Test NFT"; 
+                                imageUrl = ""; 
                                 canister  = Nft_Canister;
                                 assetId = "testAsset";
+                                collection = "Nft Reward";
                                 metadata = "{\"tag\":\"random-nft-reward\"}";
                             }; weight = 100;},
                         ]
@@ -364,7 +372,7 @@ module{
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "item_a", 1); weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "item_a"; quantity =  1;}; weight = 100;},
                         ]
                     }
                 ]
@@ -386,7 +394,7 @@ module{
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (null, "", "item_b", 1); weight = 100;},
+                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "item_b"; quantity =  1;}; weight = 100;},
                         ]
                     }
                 ]
@@ -418,12 +426,12 @@ module{
                 outcomes = [
                     {//Substract
                         possibleOutcomes = [
-                            { option = #spendEntityQuantity (?"6irst-uiaaa-aaaap-abgaa-cai", "", "item_a", 1); weight = 100;},
+                            { option = #spendEntityQuantity {wid = ?"6irst-uiaaa-aaaap-abgaa-cai"; gid = ""; eid = "item_a"; quantity = 1;}; weight = 100;},
                         ]
                     },
                     {//Add
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity (?"6irst-uiaaa-aaaap-abgaa-cai", "", "item_c", 1); weight = 100;},
+                            { option = #receiveEntityQuantity {wid = ?"6irst-uiaaa-aaaap-abgaa-cai"; gid = ""; eid = "item_c"; quantity = 1;}; weight = 100;},
                         ]
                     }
                 ]
