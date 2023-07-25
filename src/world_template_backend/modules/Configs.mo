@@ -287,12 +287,8 @@ module{
                         possibleOutcomes = [
                             { option = #mintNft {
                                 index = null;
-                                name = "Test Nft";
-                                description = "Spend 0.001 ICP to purchase a Test NFT."; 
-                                imageUrl = ""; 
                                 canister  = Nft_Canister;
                                 assetId = "testAsset";
-                                collection = "Nft Reward";
                                 metadata = "{\"tag\":\"random-nft-reward\"}";
                             }; weight = 100;},
                         ]
@@ -318,12 +314,8 @@ module{
                         possibleOutcomes = [
                             { option = #mintNft {
                                 index = null;
-                                name = "Test Nft";
-                                description = "Mint a free Test NFT"; 
-                                imageUrl = ""; 
                                 canister  = Nft_Canister;
                                 assetId = "testAsset";
-                                collection = "Nft Reward";
                                 metadata = "{\"tag\":\"random-nft-reward\"}";
                             }; weight = 100;},
                         ]
