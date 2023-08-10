@@ -36,8 +36,8 @@ module{
             objectUrl = ?""; 
             rarity = ?"common"; 
             duration = null;
-            metadata = "";
-            tag = "item skin"; 
+            metadata = null;
+            tag = ?"item skin"; 
 
         },
         { 
@@ -49,8 +49,8 @@ module{
             objectUrl = ?"";  
             rarity = ?"common"; 
             duration = null; 
-            metadata = "";
-            tag = "item skin"; 
+            metadata = null;
+            tag = ?"item skin"; 
         },
         { 
             eid = "character_c";
@@ -61,8 +61,8 @@ module{
             objectUrl = ?"";
             rarity = ?"common"; 
             duration = null;
-            metadata = "";
-            tag = "item skin"; 
+            metadata = null;
+            tag = ?"item skin"; 
         },
         { 
             eid = "character_d"; 
@@ -73,8 +73,8 @@ module{
             objectUrl = ?"";
             rarity = ?"common";
             duration = null;
-            metadata = "";
-            tag = "item skin";
+            metadata = null;
+            tag = ?"item skin";
         },
         { 
             eid = "character_e"; 
@@ -85,8 +85,8 @@ module{
             objectUrl = ?"";
             rarity = ?"common";
             duration = null;
-            metadata = "";
-            tag = "item skin";
+            metadata = null;
+            tag = ?"item skin";
         },
         { 
             eid = "character_f";
@@ -97,8 +97,8 @@ module{
             objectUrl = ?"";
             rarity = ?"rare";
             duration = null;
-            metadata = "";
-            tag = "item skin";
+            metadata = null;
+            tag = ?"item skin";
         },
         { 
             eid = "character_g";
@@ -109,8 +109,8 @@ module{
             objectUrl = ?"";
             rarity = ?"rare";
             duration = null; 
-            metadata = "";
-            tag = "item skin";
+            metadata = null;
+            tag = ?"item skin";
         },
         { 
             eid = "character_h";
@@ -121,8 +121,8 @@ module{
             objectUrl = ?"";
             rarity = ?"special";
             duration = null;
-            metadata = "";
-            tag = "item skin";
+            metadata = null;
+            tag = ?"item skin";
         },
         { 
             eid = "item_a";
@@ -133,8 +133,8 @@ module{
             objectUrl = ?"";
             rarity = ?"common";
             duration = null; 
-            metadata = "";
-            tag = "item skin";
+            metadata = null;
+            tag = ?"item";
         },
         { 
             eid = "item_b";
@@ -145,8 +145,8 @@ module{
             objectUrl = ?"";
             rarity = ?"common";
             duration = null; 
-            metadata = "";
-            tag = "item skin";
+            metadata = null;
+            tag = ?"item";
         },
         { 
             eid = "item_c";
@@ -157,8 +157,8 @@ module{
             objectUrl = ?"";
             rarity = ?"common";
             duration = null; 
-            metadata = "";
-            tag = "item skin";
+            metadata = null;
+            tag = ?"item";
         },
         //// add more items here...
     ];
@@ -247,11 +247,8 @@ module{
             description = ?"Burn a Test NFT to get a random reward in return!";
             imageUrl = null;
             tag = ?"BurnNft";
-            actionPlugin = ? #burnNft { canister = Nft_Canister; };
-            actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = null;
-            };
+            actionPlugin = ? #verifyBurnNfts { canister = Nft_Canister; requiredNftMetadata = ?[]; };
+            actionConstraint = null;
             actionResult = {
                 outcomes = [
                     {
@@ -293,18 +290,18 @@ module{
                                 canister  = Nft_Canister;
                                 assetId = "testAsset";
                                 collection = "Nft Reward";
-                                metadata = "{\"tag\":\"random-nft-reward\"}";
+                                metadata = "samir";
                             }; weight = 100;},
                         ]
                     }
                 ]
             };
         },
-        //Mint a Free Test NFT
+        //Mint Free Test NFTs
         { 
             aid = "mint_test_nft";
             name = ?"Mint a free Test NFT!";
-            description = ?"Mint a Free Test NFT";
+            description = ?"Mint Two Free Test NFT";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = null;
             actionPlugin = null;
@@ -324,14 +321,280 @@ module{
                                 canister  = Nft_Canister;
                                 assetId = "testAsset";
                                 collection = "Nft Reward";
-                                metadata = "{\"tag\":\"random-nft-reward\"}";
+                                metadata = "jack";
                             }; weight = 100;},
                         ]
-                    }
+                    },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // },
+                    // {
+                    //     possibleOutcomes = [
+                    //         { option = #mintNft {
+                    //             index = null;
+                    //             name = "Test Nft";
+                    //             description = "Mint a free Test NFT"; 
+                    //             imageUrl = ""; 
+                    //             canister  = Nft_Canister;
+                    //             assetId = "testAsset";
+                    //             collection = "Nft Reward";
+                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
+                    //         }; weight = 100;},
+                    //     ]
+                    // }
                 ]
             };
         },
-        //Mint 2 Free Test ICRC
+        //Mint 5 Free Test ICRC
         { 
             aid = "mint_test_icrc";
             name = ?"Test ICRC";
@@ -403,8 +666,8 @@ module{
         //TRADE ITEM1 WITH ITEM3
         { 
             aid = "buyItem3_Item1";
-            name = ?"Trade Offer";
-            description = ?"Trade an in-game ItemA for an ItemC";
+            name = ?"Trading";
+            description = ?"Trade an in-game ItemB for an ItemC";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = ?"Offer";
             actionPlugin = null;
@@ -412,9 +675,9 @@ module{
                 timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
                 entityConstraint = ? 
                 [{
-                    worldId = "6irst-uiaaa-aaaap-abgaa-cai"; 
-                    groupId = ""; 
-                    entityId = "item_a"; 
+                    wid = ?"6irst-uiaaa-aaaap-abgaa-cai"; 
+                    gid = ""; 
+                    eid = "item_b"; 
                     equalToAttribute = null; 
                     greaterThanOrEqualQuantity = ? 1.0; 
                     lessThanQuantity = null; 
@@ -426,7 +689,7 @@ module{
                 outcomes = [
                     {//Substract
                         possibleOutcomes = [
-                            { option = #spendEntityQuantity {wid = ?"6irst-uiaaa-aaaap-abgaa-cai"; gid = ""; eid = "item_a"; quantity = 1;}; weight = 100;},
+                            { option = #spendEntityQuantity {wid = ?"6irst-uiaaa-aaaap-abgaa-cai"; gid = ""; eid = "item_b"; quantity = 1;}; weight = 100;},
                         ]
                     },
                     {//Add
