@@ -34,7 +34,7 @@ module {
 
     public let admins = [
         "26otq-bnbgp-bfbhy-i7ypc-czyxx-3rlax-yrrny-issrb-kwepg-vqtcs-pae",//JACK
-        "2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe",
+        "2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe",//HITESH
     ]; //add admin principal for access control over DB
 
     public let WorldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
