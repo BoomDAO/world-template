@@ -9,7 +9,7 @@ import Error "mo:base/Error";
 import Float "mo:base/Float";
 import HashMap "mo:base/HashMap";
 import Hash "mo:base/Hash";
-import Map "mo:base/HashMap";
+import Map "mo:base/TrieMap";
 import Int "mo:base/Int";
 import Int16 "mo:base/Int16";
 import Int8 "mo:base/Int8";
@@ -37,23 +37,13 @@ module {
         wid : TGlobal.worldId;
         gid : TGlobal.groupId;
         eid : TGlobal.entityId;
-        attribute : ?Text;
-        quantity : ?Float;
-        expiration : ?Nat;
+        fields : Trie.Trie<Text, Text>;
     };
 
-    public type EntityConfig = 
-    {
-        gid: TGlobal.groupId;
-        eid: TGlobal.entityId;
-        name: ?Text;
-        description: ?Text;
-        imageUrl: ?Text;
-        objectUrl: ?Text;
-        rarity: ?Text;
-        duration: ?Nat;
-        tag: ?Text;
-        metadata: ?Text;
+    public type EntityConfig = {
+        gid : TGlobal.groupId;
+        eid : TGlobal.entityId;
+        fields : Trie.Trie<Text, Text>;
     };
 
     public type EntityPermission = {
@@ -61,7 +51,7 @@ module {
         gid : TGlobal.groupId;
         eid : TGlobal.entityId;
     };
-    
+
     public type GlobalPermission = {
         wid : TGlobal.worldId;
     };

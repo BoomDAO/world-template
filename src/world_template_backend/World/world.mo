@@ -47,7 +47,9 @@ import TStaking "../types/staking.types";
 
 import Config "../modules/Configs";
 
-actor class WorldTemplate(owner : Principal) = this {
+// actor class WorldTemplate(owner : Principal) = this {
+actor class WorldTemplate() = this {
+    let owner : Principal = Principal.fromText("vqin2-mfk7l-reqbt-el23g-7rolz-wbopf-csgja-s7xz3-6h3zz-iz2kf-xae");
     private stable var tokensDecimals : Trie.Trie<Text, Nat8> = Trie.empty();
     private stable var tokensFees : Trie.Trie<Text, Nat> = Trie.empty();
     private stable var totalNftCount : Trie.Trie<Text, Nat32> = Trie.empty();
