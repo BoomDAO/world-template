@@ -24,7 +24,7 @@ module {
     public type quantity = Float;
     public type duration = Nat;
 
-    public type Action = {
+    public type ActionState = {
         actionId : Text;
         intervalStartTs : Nat;
         actionCount : Nat;
@@ -50,76 +50,57 @@ module {
         assetId : Text;
         metadata : Text;
     };
-    // public type SetEntityAttribute = {
-    //     wid : ?TGlobal.worldId;
-    //     gid : TGlobal.groupId;
-    //     eid : TGlobal.entityId;
-    //     attribute : attribute;
-    // };
-    // public type SpendEntityQuantity = {
-    //     wid : ?TGlobal.worldId;
-    //     gid : TGlobal.groupId;
-    //     eid : TGlobal.entityId;
-    //     quantity : quantity;
-    // };
-    // public type ReceiveEntityQuantity = {
-    //     wid : ?TGlobal.worldId;
-    //     gid : TGlobal.groupId;
-    //     eid : TGlobal.entityId;
-    //     quantity : quantity;
-    // };
-    // public type RenewEntityExpiration = {
-    //     wid : ?TGlobal.worldId;
-    //     gid : TGlobal.groupId;
-    //     eid : TGlobal.entityId;
-    //     duration : duration;
-    // };
-    // public type ReduceEntityExpiration = {
-    //     wid : ?TGlobal.worldId;
-    //     gid : TGlobal.groupId;
-    //     eid : TGlobal.entityId;
-    //     duration : duration;
-    // };
     public type DeleteEntity = {
         wid : ?TGlobal.worldId;
         gid : TGlobal.groupId;
         eid : TGlobal.entityId;
     };
-    // public type ActionOutcomeOption = {
-    //     weight : Float;
-    //     option : {
-    //         #mintToken : MintToken;
-    //         #mintNft : MintNft;
-    //         #setEntityAttribute : SetEntityAttribute;
-    //         #spendEntityQuantity : SpendEntityQuantity;
-    //         #receiveEntityQuantity : ReceiveEntityQuantity;
-    //         #renewEntityExpiration : RenewEntityExpiration;
-    //         #reduceEntityExpiration : ReduceEntityExpiration;
-    //         #deleteEntity : DeleteEntity;
-    //     };
-    // };
+    public type RenewTimestamp = {
+        wid : ?TGlobal.worldId;
+        gid : TGlobal.groupId;
+        eid : TGlobal.entityId;
+        field : Text;
+        value : Nat;
+    };
+    public type SetString = {
+        wid : ?TGlobal.worldId;
+        gid : TGlobal.groupId;
+        eid : TGlobal.entityId;
+        field : Text;
+        value : Text;
+    };
+    public type SetNumber = {
+        wid : ?TGlobal.worldId;
+        gid : TGlobal.groupId;
+        eid : TGlobal.entityId;
+        field : Text;
+        value : Float;
+    };
+    public type DecrementNumber = {
+        wid : ?TGlobal.worldId;
+        gid : TGlobal.groupId;
+        eid : TGlobal.entityId;
+        field : Text;
+        value : Float;
+    };
+    public type IncrementNumber = {
+        wid : ?TGlobal.worldId;
+        gid : TGlobal.groupId;
+        eid : TGlobal.entityId;
+        field : Text;
+        value : Float;
+    };
     public type ActionOutcomeOption = {
         weight : Float;
         option : {
             #mintToken : MintToken;
             #mintNft : MintNft;
             #deleteEntity : DeleteEntity;
-            #renewTimestamp : {
-                field : Text;
-                value : Nat;
-            };
-            #setString : {
-                field : Text;
-                value : Text;
-            };
-            #decrementNumber : {
-                field : Text;
-                value : Nat;
-            };
-            #incrementNumber : {
-                field : Text;
-                value : Nat;
-            };
+            #renewTimestamp : RenewTimestamp;
+            #setString : SetString;
+            #setNumber : SetNumber;
+            #decrementNumber : DecrementNumber;
+            #incrementNumber : IncrementNumber;
         };
     };
     public type ActionOutcome = {
@@ -141,21 +122,6 @@ module {
         #claimStakingRewardIcp : { requiredAmount : Float };
         #claimStakingRewardIcrc : { canister : Text; requiredAmount : Float };
     };
-    // public type ActionConstraint = {
-    //     timeConstraint : ?{
-    //         intervalDuration : Nat;
-    //         actionsPerInterval : Nat;
-    //     };
-    //     entityConstraint : ?[{
-    //         wid : ?TGlobal.worldId;
-    //         gid : TGlobal.groupId;
-    //         eid : TGlobal.entityId;
-    //         equalToAttribute : ?Text;
-    //         greaterThanOrEqualQuantity : ?Float;
-    //         lessThanQuantity : ?Float;
-    //         notExpired : ?Bool;
-    //     }];
-    // };
     public type ActionConstraint = {
         timeConstraint : ?{
             intervalDuration : Nat;
@@ -167,15 +133,18 @@ module {
             eid : TGlobal.entityId;
             fieldName : Text;
             validation : {
-                #greaterThanNumber : Nat;
-                #lessThanNumber : Nat;
-                #equalToNumber : Nat;
+                #greaterThanNumber : Float;
+                #lessThanNumber : Float;
+                #greaterThanEqualToNumber : Float;
+                #lessThanEqualToNumber : Float;
+                #equalToNumber : Float;
                 #equalToString : Text;
-                #greaterThanNowTs : Nat;
+                #greaterThanNowTimestamp;
+                #lessThanNowTimestamp;
             };
         }];
     };
-    public type ActionConfig = {
+    public type Action = {
         aid : Text;
         name : ?Text;
         description : ?Text;
@@ -186,5 +155,5 @@ module {
         actionResult : ActionResult;
     };
 
-    public type ActionResponse = (Action, [TEntity.Entity], [MintNft], [MintToken]);
+    public type ActionResponse = (ActionState, [TEntity.Entity], [MintNft], [MintToken]);
 };

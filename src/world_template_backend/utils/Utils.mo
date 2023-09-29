@@ -106,6 +106,8 @@ module {
             };
         };
 
+        if(Text.contains(t, #char '-')) return -f;
+
         return f;
     };
 

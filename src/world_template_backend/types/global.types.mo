@@ -7,4 +7,5 @@ module{
     public type groupId = Text;
     public type worldId = Text;
     public type nodeId = Text;
+    public type configId = Text;
 }

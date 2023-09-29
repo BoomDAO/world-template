@@ -9,7 +9,6 @@ import Error "mo:base/Error";
 import Float "mo:base/Float";
 import HashMap "mo:base/HashMap";
 import Hash "mo:base/Hash";
-import Map "mo:base/TrieMap";
 import Int "mo:base/Int";
 import Int16 "mo:base/Int16";
 import Int8 "mo:base/Int8";
@@ -28,6 +27,7 @@ import Text "mo:base/Text";
 import Time "mo:base/Time";
 import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
+import Map "../utils/Map";
 
 import TGlobal "./global.types";
 
@@ -37,13 +37,24 @@ module {
         wid : TGlobal.worldId;
         gid : TGlobal.groupId;
         eid : TGlobal.entityId;
-        fields : Trie.Trie<Text, Text>;
+        fields : Map.Map<Text, Text>;
     };
 
-    public type EntityConfig = {
+    public type StableEntity = {
+        wid : TGlobal.worldId;
         gid : TGlobal.groupId;
         eid : TGlobal.entityId;
-        fields : Trie.Trie<Text, Text>;
+        fields : [(Text, Text)];
+    };
+
+    public type Config = {
+        cid : TGlobal.configId;
+        fields : Map.Map<Text, Text>;
+    };
+
+    public type StableConfig = {
+        cid : TGlobal.configId;
+        fields : [(Text, Text)];
     };
 
     public type EntityPermission = {
