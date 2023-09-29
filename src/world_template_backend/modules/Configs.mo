@@ -19,233 +19,174 @@ import ActionTypes "../types/action.types";
 import EntityTypes "../types/entity.types";
 
 module{
-    public type EntityConfigs = [EntityTypes.EntityConfig]; 
-    public type ActionConfigs = [ActionTypes.ActionConfig]; 
+    public type StableConfigs = [EntityTypes.StableConfig]; 
+    public type Actions = [ActionTypes.Action]; 
 
     public let Nft_Canister = "6uvic-diaaa-aaaap-abgca-cai"; //Game Collection
     public let ICRC1_Ledger = "6bszp-caaaa-aaaap-abgbq-cai"; //Game Token
     
-    public let entityConfigs : EntityConfigs = [      
-        // //ITEMS
-        { 
-            eid = "character_a"; 
-            gid = "";
-            name = ?"CharacterA"; 
-            description = ?"just an item"; 
-            imageUrl = ?"";
-            objectUrl = ?""; 
-            rarity = ?"common"; 
-            duration = null;
-            metadata = null;
-            tag = ?"item skin"; 
-
-        },
-        { 
-            eid = "character_b";
-            gid = "";
-            name = ?"CharacterB"; 
-            description = ?"just an item"; 
-            imageUrl = ?"";
-            objectUrl = ?"";  
-            rarity = ?"common"; 
-            duration = null; 
-            metadata = null;
-            tag = ?"item skin"; 
-        },
-        { 
-            eid = "character_c";
-            gid = "";
-            name = ?"CharacterC"; 
-            description = ?"just an item"; 
-            imageUrl = ?"";
-            objectUrl = ?"";
-            rarity = ?"common"; 
-            duration = null;
-            metadata = null;
-            tag = ?"item skin"; 
-        },
-        { 
-            eid = "character_d"; 
-            gid = "";
-            name = ?"CharacterD"; 
-            description = ?"just an item"; 
-            imageUrl = ?"";
-            objectUrl = ?"";
-            rarity = ?"common";
-            duration = null;
-            metadata = null;
-            tag = ?"item skin";
-        },
-        { 
-            eid = "character_e"; 
-            gid = "";
-            name = ?"CharacterE"; 
-            description = ?"just an item"; 
-            imageUrl = ?"";
-            objectUrl = ?"";
-            rarity = ?"common";
-            duration = null;
-            metadata = null;
-            tag = ?"item skin";
-        },
-        { 
-            eid = "character_f";
-            gid = "";
-            name = ?"CharacterF"; 
-            description = ?"just an item"; 
-            imageUrl = ?"";
-            objectUrl = ?"";
-            rarity = ?"rare";
-            duration = null;
-            metadata = null;
-            tag = ?"item skin";
-        },
-        { 
-            eid = "character_g";
-            gid = "";
-            name = ?"CharacterG"; 
-            description = ?"just an item"; 
-            imageUrl = ?"";
-            objectUrl = ?"";
-            rarity = ?"rare";
-            duration = null; 
-            metadata = null;
-            tag = ?"item skin";
-        },
-        { 
-            eid = "character_h";
-            gid = "";
-            name = ?"CharacterH"; 
-            description = ?"just an item"; 
-            imageUrl = ?"";
-            objectUrl = ?"";
-            rarity = ?"special";
-            duration = null;
-            metadata = null;
-            tag = ?"item skin";
-        },
-        { 
-            eid = "item_a";
-            gid = "";
-            name = ?"ItemA"; 
-            description = ?"just an item"; 
-            imageUrl = ?"";
-            objectUrl = ?"";
-            rarity = ?"common";
-            duration = null; 
-            metadata = null;
-            tag = ?"item";
-        },
-        { 
-            eid = "item_b";
-            gid = "";
-            name = ?"ItemB"; 
-            description = ?"just an item"; 
-            imageUrl = ?"";
-            objectUrl = ?"";
-            rarity = ?"common";
-            duration = null; 
-            metadata = null;
-            tag = ?"item";
-        },
-        { 
-            eid = "item_c";
-            gid = "";
-            name = ?"ItemC"; 
-            description = ?"just an item"; 
-            imageUrl = ?"";
-            objectUrl = ?"";
-            rarity = ?"common";
-            duration = null; 
-            metadata = null;
-            tag = ?"item";
-        },
-        //// add more items here...
+    public let configs : StableConfigs = [
+            //Tokens
+            {
+                cid = "icp_details";
+                fields = [
+                            ("tag", "token"),
+                            ("canister","ryjl3-tyaaa-aaaaa-aaaba-cai"),
+                            ("name", "ICP"),
+                            ("description", "This is the base Internet Computer Token"),
+                            ("urlLogo", "https://cryptologos.cc/logos/internet-computer-icp-logo.png?v=026"),
+                        ];
+            },
+            {
+                cid = "test_token_details";
+                fields = [
+                            ("tag", "token"),
+                            ("canister","6bszp-caaaa-aaaap-abgbq-cai"),
+                            ("name", "Test Token"),
+                            ("description", "just an Test Token"),
+                            ("urlLogo", "https://cryptologos.cc/logos/dogecoin-doge-logo.png?v=026"),
+                        ];
+            },
+            //Nfts
+            {
+                cid = "the_moon_walker_details";
+                fields = [
+                            ("tag", "nft"),
+                            ("canister","er7d4-6iaaa-aaaaj-qac2q-cai"),
+                            ("isStandard", "true"),
+                            ("name", "The Moonwalkers"),
+                            ("description", "Dope Characters"),
+                            ("urlLogo", "https://i.postimg.cc/hvyLyfwh/The-Moon-Walker-Logo.png"),
+                        ];
+            },
+            {
+                cid = "poked_bots_details";
+                fields = [
+                            ("tag", "nft"),
+                            ("canister","er7d4-6iaaa-aaaaj-qac2q-cai"),
+                            ("isStandard", "true"),
+                            ("name", "Poked Bots"),
+                            ("description", "Dope Characters"),
+                            ("urlLogo", "https://i.postimg.cc/d1Qn5P1H/image.png"),
+                        ];
+            },
+            {
+                cid = "test_nft_collection_details";
+                fields = [
+                            ("tag", "nft"),
+                            ("canister","6uvic-diaaa-aaaap-abgca-cai"),
+                            ("isStandard", "false"),
+                            ("name", "Test Nft Collection"),
+                            ("description", "This is a test collection"),
+                            ("urlLogo", "https://i.postimg.cc/65smkh6B/BoomDao.jpg"),
+                        ];
+            },
+            //Others   
+            {
+                cid = "character_a";
+                fields = [
+                            ("name", "CharacterA"),
+                            ("description", "just an item"),
+                            ("rarity", "common"),
+                        ];
+            },
+            {
+                cid = "character_b";
+                fields = [
+                            ("name", "CharacterB"),
+                            ("description", "just an item"),
+                            ("rarity", "common"),
+                        ];
+            },   
+            {
+                cid = "character_c";
+                fields = [
+                            ("name", "CharacterC"),
+                            ("description", "just an item"),
+                            ("rarity", "common"),
+                        ];
+            },   
+            {
+                cid = "character_d";
+                fields = [
+                            ("name", "CharacterD"),
+                            ("description", "just an item"),
+                            ("rarity", "common"),
+                        ];
+            },
+            {
+                cid = "character_e";
+                fields = [
+                            ("name", "CharacterE"),
+                            ("description", "just an item"),
+                            ("rarity", "common"),
+                        ];
+            },
+            {
+                cid = "character_f";
+                fields = [
+                            ("name", "CharacterF"),
+                            ("description", "just an item"),
+                            ("rarity", "rare"),
+                        ];
+            },
+            {
+                cid = "character_g";
+                fields = [
+                            ("name", "CharacterG"),
+                            ("description", "just an item"),
+                            ("rarity", "rare"),
+                        ];
+            },
+            {
+                cid = "character_h";
+                fields = [
+                            ("name", "CharacterH"),
+                            ("description", "just an item"),
+                            ("rarity", "special"),
+                        ];
+            },
+            {
+                cid = "character_h";
+                fields = [
+                            ("name", "CharacterH"),
+                            ("description", "just an item"),
+                            ("rarity", "special"),
+                        ];
+            },
+            //
+            {
+                cid = "item_a";
+                fields = [
+                            ("name", "ItemA"),
+                            ("description", "just an item"),
+                            ("rarity", "common"),
+                        ];
+            },
+            {
+                cid = "item_b";
+                fields = [
+                            ("name", "ItemB"),
+                            ("description", "just an item"),
+                            ("rarity", "common"),
+                        ];
+            },
+            {
+                cid = "item_c";
+                fields = [
+                            ("name", "ItemC"),
+                            ("description", "just an item"),
+                            ("rarity", "common"),
+                        ];
+            },
     ];
-    public let actionConfigs : ActionConfigs = [
-        //CLAIM STAKE ICP REWARD
-        { 
-            aid = "stakeIcp";
-            name = ?"Stake Icp";
-            description = ?"You can try receive reward over time for staking at least 0.005 ICP";
-            imageUrl = null;
-            tag = ?"Claim Stake";
-            actionPlugin = ? #claimStakingRewardIcp 
-            { 
-                requiredAmount = 0.005;//0.005 ICP
-            };
-            actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = null;
-            };
-            actionResult = {
-                outcomes = [
-                    {
-                        possibleOutcomes = [
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_a"; quantity =  1;};  weight = 100;},
-                        ]
-                    }
-                ]
-            };
-        },
-        //CLAIM STAKE ICRC REWARD
-        { 
-            aid = "stakeIcrc";
-            name = ?"Stake Icrc";
-            description = ?"You can try receive reward over time for staking at least 0.005 ICP";
-            imageUrl = null;
-            tag = ?"Claim Stake";
-            actionPlugin = ? #claimStakingRewardIcrc 
-            { 
-                requiredAmount = 0.00005;//0.005 ICRC
-                canister = ICRC1_Ledger;
-            };
-            actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = null;
-            };
-            actionResult = {
-                outcomes = [
-                    {
-                        possibleOutcomes = [
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_b"; quantity =  1;};  weight = 100;},
-                        ]
-                    }
-                ]
-            };
-        },
-        //CLAIM STAKE NFT REWARD
-        { 
-            aid = "stakeNft";
-            name = ?"Stake Nft";
-            description = ?"You can try receive reward over time for staking at least 1 Nft";
-            imageUrl = null;
-            tag = ?"Claim Stake";
-            actionPlugin = ? #claimStakingRewardNft 
-            { 
-                requiredAmount = 1;//0.005 ICRC
-                canister = Nft_Canister;
-            };
-            actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = null;
-            };
-            actionResult = {
-                outcomes = [
-                    {
-                        possibleOutcomes = [
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_c"; quantity =  1;};  weight = 100;},
-                        ]
-                    }
-                ]
-            };
-        },
-        //BURN NFT
+    public let action : Actions = [
+    //     //BURN NFT
         { 
             aid = "burn_nft_tiket";
             name = ?"Burn a Test NFT!";
             description = ?"Burn a Test NFT to get a random reward in return!";
-            imageUrl = null;
+            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = ?"BurnNft";
             actionPlugin = ? #verifyBurnNfts { canister = Nft_Canister; requiredNftMetadata = ?[]; };
             actionConstraint = null;
@@ -253,20 +194,20 @@ module{
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_a"; quantity =  1;};  weight = 100;},
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_b"; quantity =  1;}; weight = 100;},
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_c"; quantity =  1;};  weight = 100;},
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_d"; quantity =  1;};  weight = 100;},
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_e"; quantity =  1;};  weight = 100;},
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_f"; quantity =  1;};  weight = 100;},
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_g"; quantity =  1;};  weight = 100;},
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "character_h"; quantity =  1;};  weight = 100;},
+                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_a"; field = "quantity"; value =  1;};  weight = 100;},
+                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_b"; field = "quantity"; value =  1;};  weight = 100;},
+                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_c"; field = "quantity"; value =  1;};  weight = 100;},
+                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_d"; field = "quantity"; value =  1;};  weight = 100;},
+                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_e"; field = "quantity"; value =  1;};  weight = 100;},
+                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_f"; field = "quantity"; value =  1;};  weight = 100;},
+                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_g"; field = "quantity"; value =  1;};  weight = 100;},
+                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_h"; field = "quantity"; value =  1;};  weight = 100;},
                         ]
                     }
                 ]
             };
         },
-        //SPEND ICP TO MINT NFT 
+    //     //SPEND ICP TO MINT NFT 
         { 
             aid = "spend_icp_to_mint_test_nft";
             name = ?"Buy a Test NFT!";
@@ -297,7 +238,7 @@ module{
                 ]
             };
         },
-        //Mint Free Test NFTs
+    //     //Mint Free Test NFTs
         { 
             aid = "mint_test_nft";
             name = ?"Mint a free Test NFT!";
@@ -325,276 +266,10 @@ module{
                             }; weight = 100;},
                         ]
                     },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // },
-                    // {
-                    //     possibleOutcomes = [
-                    //         { option = #mintNft {
-                    //             index = null;
-                    //             name = "Test Nft";
-                    //             description = "Mint a free Test NFT"; 
-                    //             imageUrl = ""; 
-                    //             canister  = Nft_Canister;
-                    //             assetId = "testAsset";
-                    //             collection = "Nft Reward";
-                    //             metadata = "{\"tag\":\"random-nft-reward\"}";
-                    //         }; weight = 100;},
-                    //     ]
-                    // }
                 ]
             };
         },
-        //Mint 5 Free Test ICRC
+    //     //Mint 5 Free Test ICRC
         { 
             aid = "mint_test_icrc";
             name = ?"Test ICRC";
@@ -619,9 +294,9 @@ module{
                 ]
             };
         },
-        //BUY ITEM1 WITH ICP
+    //     //BUY ItemA WITH ICP
         { 
-            aid = "buyItem1_Icp";
+            aid = "buyItemA_Icp";
             name = ?"ItemA Offer!";
             description = ?"Spend 0.001 ICP to receive an ItemA";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
@@ -635,15 +310,15 @@ module{
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "item_a"; quantity =  1;}; weight = 100;},
+                            { option = #incrementNumber { wid = null; gid = "item"; eid = "item_a"; field = "quantity"; value =  1;};  weight = 100;},
                         ]
                     }
                 ]
             };
         },
-        //BUY ITEM2 WITH ICRC
+    //     //BUY ItemB WITH ICRC
         { 
-            aid = "buyItem2_Icrc";
+            aid = "buyItemB_Icrc";
             name = ?"ItemB Offer!";
             description = ?"Spend 1 Test Token to receive an ItemB";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
@@ -657,15 +332,15 @@ module{
                 outcomes = [
                     {
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity { wid = null; gid = ""; eid = "item_b"; quantity =  1;}; weight = 100;},
+                            { option = #incrementNumber { wid = null; gid = "item"; eid = "item_b"; field = "quantity"; value =  1;};  weight = 100;},
                         ]
                     }
                 ]
             };
         },
-        //TRADE ITEM1 WITH ITEM3
+    //     //TRADE ItemC WITH ItemB
         { 
-            aid = "buyItem3_Item1";
+            aid = "buyItemC_ItemB";
             name = ?"Trading";
             description = ?"Trade an in-game ItemB for an ItemC";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
@@ -673,28 +348,25 @@ module{
             actionPlugin = null;
             actionConstraint = ? {
                 timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = ? 
+                entityConstraint = ? //to replace this two constraints for a greaterThanOrEqualTo
                 [{
                     wid = ?"6irst-uiaaa-aaaap-abgaa-cai"; 
-                    gid = ""; 
+                    gid = "item"; 
                     eid = "item_b"; 
-                    equalToAttribute = null; 
-                    greaterThanOrEqualQuantity = ? 1.0; 
-                    lessThanQuantity = null; 
-                    notExpired = null;
-            
+                    fieldName = "quantity";
+                    validation = #greaterThanEqualToNumber 1.0;
                 }];
             };
             actionResult = { 
                 outcomes = [
                     {//Substract
                         possibleOutcomes = [
-                            { option = #spendEntityQuantity {wid = ?"6irst-uiaaa-aaaap-abgaa-cai"; gid = ""; eid = "item_b"; quantity = 1;}; weight = 100;},
+                            { option = #decrementNumber { wid = null; gid = "item"; eid = "item_b"; field = "quantity"; value =  1.0;};  weight = 100;},
                         ]
                     },
                     {//Add
                         possibleOutcomes = [
-                            { option = #receiveEntityQuantity {wid = ?"6irst-uiaaa-aaaap-abgaa-cai"; gid = ""; eid = "item_c"; quantity = 1;}; weight = 100;},
+                            { option = #incrementNumber { wid = null; gid = "item"; eid = "item_c"; field = "quantity"; value =  1.0;};  weight = 100;},
                         ]
                     }
                 ]
