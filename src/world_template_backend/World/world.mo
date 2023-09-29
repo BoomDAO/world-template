@@ -29,12 +29,10 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 import Map "../utils/Map";
 
-import JSON "../utils/Json";
 import Parser "../utils/Parser";
 import ENV "../utils/Env";
 import Utils "../utils/Utils";
 import Leaderboard "../modules/Leaderboard";
-import Json "../utils/Json";
 import RandomUtil "../utils/RandomUtil";
 import EXTCORE "../utils/Core";
 import EXT "../types/ext.types";
@@ -49,8 +47,6 @@ import TStaking "../types/staking.types";
 import Config "../modules/Configs";
 
 actor class WorldTemplate(owner : Principal) = this {
-//actor class WorldTemplate() = this {
-    //let owner : Principal = Principal.fromText("vqin2-mfk7l-reqbt-el23g-7rolz-wbopf-csgja-s7xz3-6h3zz-iz2kf-xae");
     private stable var tokensDecimals : Trie.Trie<Text, Nat8> = Trie.empty();
     private stable var tokensFees : Trie.Trie<Text, Nat> = Trie.empty();
     private stable var totalNftCount : Trie.Trie<Text, Nat32> = Trie.empty();
@@ -706,14 +702,6 @@ actor class WorldTemplate(owner : Principal) = this {
         let userNode : UserNode = actor (userNodeId);
 
         ignore userNode.processAction(userPrincipalTxt, actionId, actionConfig.actionConstraint, outcomes);
-        // var processActionResult = await userNode.processAction(userPrincipalTxt, actionId, actionConfig.actionConstraint, outcomes);
-
-        // switch(processActionResult){
-        //     case (#err errMsg){
-        //         return #err errMsg;
-        //     };
-        //     case (#ok okMsg) {};
-        // };
 
         let accountId : Text = AccountIdentifier.fromText(userPrincipalTxt, null);
 

@@ -37,7 +37,7 @@ module {
         "2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe",//HITESH
     ]; //add admin principal for access control over DB
 
-    public let WorldHubCanisterId = "fgpem-ziaaa-aaaag-abi2q-cai";
+    public let WorldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
     public let PaymentHubCanisterId = "5hr3g-hqaaa-aaaap-abbxa-cai"; //!avoid changing this!
     public let StakingHubCanisterId = "jozll-yaaaa-aaaap-abf5q-cai"; //!avoid changing this!
 };
