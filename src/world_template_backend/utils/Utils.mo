@@ -133,5 +133,32 @@ module {
             return 0;
         };
         return textToNat(Int.toText(value));
-    }
+    };
+
+    public func indexOf(sample : Text, element : Char) : (?Nat){
+
+        var index = 0;
+        for(item in Text.toIter(sample)){
+            if(item == element) return ?index;
+            index += 1;
+        };
+        
+        return null;
+    };
+    public func bufferTextIndexOf(sample : Buffer.Buffer<Text>, element : {#char : Char; #text: Text; }) : (?Nat){
+        var _element = "";
+
+        switch(element){
+            case(#char value) _element := Text.fromChar(value);
+            case(#text value) _element := value;
+        };
+
+        var index = 0;
+        for(item in sample.vals()){
+            if(item == _element) return ?index;
+            index += 1;
+        };
+        
+        return null;
+    };
 };

@@ -7,7 +7,6 @@ import Float "mo:base/Float";
 import Option "mo:base/Option";
 
 import JSON "../utils/Json";
-import RandomUtil "../utils/RandomUtil";
 import Utils "../utils/Utils";
 import Int "mo:base/Int";
 
@@ -23,7 +22,7 @@ module{
     public type Actions = [ActionTypes.Action]; 
 
     public let Nft_Canister = "6uvic-diaaa-aaaap-abgca-cai"; //Game Collection
-    public let ICRC1_Ledger = "6bszp-caaaa-aaaap-abgbq-cai"; //Game Token
+    public let ICRC1_Ledger = "qsnar-gqaaa-aaaam-abxnq-cai"; //Game Token
     
     public let configs : StableConfigs = [
             //Tokens
@@ -31,7 +30,7 @@ module{
                 cid = "icp_details";
                 fields = [
                             ("tag", "token"),
-                            ("canister","ryjl3-tyaaa-aaaaa-aaaba-cai"),
+                            ("canister", "ryjl3-tyaaa-aaaaa-aaaba-cai"),
                             ("name", "ICP"),
                             ("description", "This is the base Internet Computer Token"),
                             ("urlLogo", "https://cryptologos.cc/logos/internet-computer-icp-logo.png?v=026"),
@@ -41,7 +40,7 @@ module{
                 cid = "test_token_details";
                 fields = [
                             ("tag", "token"),
-                            ("canister","6bszp-caaaa-aaaap-abgbq-cai"),
+                            ("canister", ICRC1_Ledger),
                             ("name", "Test Token"),
                             ("description", "just an Test Token"),
                             ("urlLogo", "https://cryptologos.cc/logos/dogecoin-doge-logo.png?v=026"),
@@ -52,7 +51,7 @@ module{
                 cid = "the_moon_walker_details";
                 fields = [
                             ("tag", "nft"),
-                            ("canister","er7d4-6iaaa-aaaaj-qac2q-cai"),
+                            ("canister", "er7d4-6iaaa-aaaaj-qac2q-cai"),
                             ("isStandard", "true"),
                             ("name", "The Moonwalkers"),
                             ("description", "Dope Characters"),
@@ -74,14 +73,14 @@ module{
                 cid = "test_nft_collection_details";
                 fields = [
                             ("tag", "nft"),
-                            ("canister","6uvic-diaaa-aaaap-abgca-cai"),
+                            ("canister", Nft_Canister),
                             ("isStandard", "false"),
                             ("name", "Test Nft Collection"),
                             ("description", "This is a test collection"),
                             ("urlLogo", "https://i.postimg.cc/65smkh6B/BoomDao.jpg"),
                         ];
             },
-            //Others   
+            //Items   
             {
                 cid = "character_a";
                 fields = [
@@ -179,6 +178,18 @@ module{
                             ("rarity", "common"),
                         ];
             },
+            //Others
+            {
+                cid = "shop_window_actions";
+                fields = [
+                            ("buyItemA_Icp", "verifyICP"),
+                            ("buyItemB_Icrc", "verifyICRC"),
+                            ("buyItemC_ItemB", "trade"),
+                            ("spend_icp_to_mint_test_nft", "verifyICP"),
+                            ("burn_nft_tiket", "verifyNftBurn"),
+                            ("nft_holding_verification", "verifyNftHold"),
+                        ];
+            },
     ];
     public let action : Actions = [
     //     //BURN NFT
@@ -188,24 +199,70 @@ module{
             description = ?"Burn a Test NFT to get a random reward in return!";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = ?"BurnNft";
-            actionPlugin = ? #verifyBurnNfts { canister = Nft_Canister; requiredNftMetadata = ?[]; };
-            actionConstraint = null;
-            actionResult = {
-                outcomes = [
-                    {
-                        possibleOutcomes = [
-                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_a"; field = "quantity"; value =  1;};  weight = 100;},
-                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_b"; field = "quantity"; value =  1;};  weight = 100;},
-                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_c"; field = "quantity"; value =  1;};  weight = 100;},
-                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_d"; field = "quantity"; value =  1;};  weight = 100;},
-                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_e"; field = "quantity"; value =  1;};  weight = 100;},
-                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_f"; field = "quantity"; value =  1;};  weight = 100;},
-                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_g"; field = "quantity"; value =  1;};  weight = 100;},
-                            { option = #incrementNumber { wid = null; gid = "item"; eid = "character_h"; field = "quantity"; value =  1;};  weight = 100;},
-                        ]
-                    }
-                ]
+            callerAction = ? {
+                actionConstraint = ? {
+                    timeConstraint = null;
+                    entityConstraint = [];
+                    nftConstraint = [
+                        { 
+                            nftConstraintType = #transfer { toPrincipal = "tulnw-tl2en-5kqoh-qdgf4-5y7k6-ig3on-htta2-35wv7-2u25c-yqoas-zae" };
+                            canister = Nft_Canister;
+                            metadata = null;
+                        }
+                    ];
+                    icpConstraint = null;
+                    icrcConstraint = [];
+                };
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_a"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_b"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_c"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_d"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                            ]
+                        }
+                    ]
+                };
             };
+            targetAction = null;
+        },
+    //     //BURN NFT
+        { 
+            aid = "nft_holding_verification";
+            name = ?"TEST NFT HOLDING REWARD";
+            description = ?"Get a reward for holding an nft of TEST NFT collection";
+            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
+            tag = ?"HoldNft";
+            callerAction = ? {
+                actionConstraint = ? {
+                    timeConstraint = null;
+                    entityConstraint = [];
+                    nftConstraint = [
+                        { 
+                            nftConstraintType = #hold (#boomEXT); 
+                            canister = Nft_Canister; 
+                            metadata = null;
+                        }
+                    ];
+                    icpConstraint = null;
+                    icrcConstraint = [];
+                };
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_e"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_f"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_g"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_h"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                            ]
+                        }
+                    ]
+                };
+            };
+            targetAction = null;
         },
     //     //SPEND ICP TO MINT NFT 
         { 
@@ -214,29 +271,38 @@ module{
             description = ?"Spend 0.001 ICP to get a \"Test NFT\" ";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = ?"Mint";
-            actionPlugin = ? #verifyTransferIcp { amt = 0.001; toPrincipal = ENV.PaymentHubCanisterId };
-            actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = null;
+            callerAction = ? {
+                actionConstraint = ? {
+                    timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                    entityConstraint = [];
+                    nftConstraint = [];
+                    icpConstraint = ? {
+                            amount = 0.001; toPrincipal = "tulnw-tl2en-5kqoh-qdgf4-5y7k6-ig3on-htta2-35wv7-2u25c-yqoas-zae"
+                        };
+                    icrcConstraint = [];
+                };
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { 
+                                    option = #mintNft {
+                                    index = null;
+                                    name = "Test Nft";
+                                    description = "Spend 0.001 ICP to purchase a Test NFT."; 
+                                    imageUrl = ""; 
+                                    canister  = Nft_Canister;
+                                    assetId = "testAsset";
+                                    collection = "Nft Reward";
+                                    metadata = "metadata_A";
+                                    };  weight = 100;
+                                },
+                            ]
+                        }
+                    ]
+                };
             };
-            actionResult = { 
-                outcomes = [
-                    {
-                        possibleOutcomes = [
-                            { option = #mintNft {
-                                index = null;
-                                name = "Test Nft";
-                                description = "Spend 0.001 ICP to purchase a Test NFT."; 
-                                imageUrl = ""; 
-                                canister  = Nft_Canister;
-                                assetId = "testAsset";
-                                collection = "Nft Reward";
-                                metadata = "samir";
-                            }; weight = 100;},
-                        ]
-                    }
-                ]
-            };
+            targetAction = null;
         },
     //     //Mint Free Test NFTs
         { 
@@ -245,29 +311,35 @@ module{
             description = ?"Mint Two Free Test NFT";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = null;
-            actionPlugin = null;
-            actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = null;
+            callerAction = ? {
+                actionConstraint = ? {
+                    timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                    entityConstraint = [];
+                    nftConstraint = [];
+                    icpConstraint = null;
+                    icrcConstraint = [];
+                };
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #mintNft {
+                                    index = null;
+                                    name = "Test Nft";
+                                    description = "Mint a free Test Nft."; 
+                                    imageUrl = ""; 
+                                    canister  = Nft_Canister;
+                                    assetId = "testAsset";
+                                    collection = "Nft Reward";
+                                    metadata = "metadata_B";
+                                    };  weight = 100;
+                                },
+                            ]
+                        }
+                    ]
+                };
             };
-            actionResult = { 
-                outcomes = [
-                    {
-                        possibleOutcomes = [
-                            { option = #mintNft {
-                                index = null;
-                                name = "Test Nft";
-                                description = "Mint a free Test NFT"; 
-                                imageUrl = ""; 
-                                canister  = Nft_Canister;
-                                assetId = "testAsset";
-                                collection = "Nft Reward";
-                                metadata = "jack";
-                            }; weight = 100;},
-                        ]
-                    },
-                ]
-            };
+            targetAction = null;
         },
     //     //Mint 5 Free Test ICRC
         { 
@@ -276,23 +348,30 @@ module{
             description = ?"Mint 5 Free Test Token";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = null;
-            actionPlugin = null;
-            actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = null;
+            callerAction = ? {
+                actionConstraint = ? {
+                    timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                    entityConstraint = [];
+                    nftConstraint = [];
+                    icpConstraint = null;
+                    icrcConstraint = [];
+                };
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { 
+                                    option = #transferIcrc {
+                                        quantity = 5;
+                                        canister = ICRC1_Ledger;
+                                    };  weight = 100;
+                                },
+                            ]
+                        }
+                    ]
+                };
             };
-            actionResult = { 
-                outcomes = [
-                    {
-                        possibleOutcomes = [
-                            { option = #mintToken {
-                                quantity = 5;
-                                canister = ICRC1_Ledger;
-                            }; weight = 100;},
-                        ]
-                    }
-                ]
-            };
+            targetAction = null;
         },
     //     //BUY ItemA WITH ICP
         { 
@@ -301,20 +380,27 @@ module{
             description = ?"Spend 0.001 ICP to receive an ItemA";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = ?"Offer";
-            actionPlugin = ? #verifyTransferIcp { amt = 0.001; toPrincipal = ENV.PaymentHubCanisterId };
-            actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = null;
+            callerAction = ? {
+                actionConstraint = ? {
+                    timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                    entityConstraint = [];
+                    nftConstraint = [];
+                    icpConstraint = ? {
+                            amount = 0.001; toPrincipal = "tulnw-tl2en-5kqoh-qdgf4-5y7k6-ig3on-htta2-35wv7-2u25c-yqoas-zae"
+                        };
+                    icrcConstraint = [];
+                };
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; gid = "item"; eid = "item_a"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                            ]
+                        }
+                    ]
+                };
             };
-            actionResult = { 
-                outcomes = [
-                    {
-                        possibleOutcomes = [
-                            { option = #incrementNumber { wid = null; gid = "item"; eid = "item_a"; field = "quantity"; value =  1;};  weight = 100;},
-                        ]
-                    }
-                ]
-            };
+            targetAction = null;
         },
     //     //BUY ItemB WITH ICRC
         { 
@@ -323,53 +409,108 @@ module{
             description = ?"Spend 1 Test Token to receive an ItemB";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = ?"Offer";
-            actionPlugin = ? #verifyTransferIcrc { canister = ICRC1_Ledger; amt = 1; toPrincipal = ENV.PaymentHubCanisterId };
-            actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = null;
+            callerAction = ? {
+                actionConstraint = ? {
+                    timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                    entityConstraint = [];
+                    nftConstraint = [];
+                    icpConstraint = null;
+                    icrcConstraint = [
+                        {
+                            canister = ICRC1_Ledger; amount = 1; toPrincipal = "tulnw-tl2en-5kqoh-qdgf4-5y7k6-ig3on-htta2-35wv7-2u25c-yqoas-zae"
+                        }
+                    ];
+                };
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; gid = "item"; eid = "item_b"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                            ]
+                        }
+                    ]
+                };
             };
-            actionResult = { 
-                outcomes = [
-                    {
-                        possibleOutcomes = [
-                            { option = #incrementNumber { wid = null; gid = "item"; eid = "item_b"; field = "quantity"; value =  1;};  weight = 100;},
-                        ]
-                    }
-                ]
-            };
+            targetAction = null;
         },
-    //     //TRADE ItemC WITH ItemB
+    //     //TRADE ItemC WITH ItemA
         { 
             aid = "buyItemC_ItemB";
             name = ?"Trading";
-            description = ?"Trade an in-game ItemB for an ItemC";
+            description = ?"Trade an in-game ItemA for an ItemC";
             imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
             tag = ?"Offer";
-            actionPlugin = null;
-            actionConstraint = ? {
-                timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
-                entityConstraint = ? //to replace this two constraints for a greaterThanOrEqualTo
-                [{
-                    wid = ?"6irst-uiaaa-aaaap-abgaa-cai"; 
+            callerAction = ? {
+                actionConstraint = ? {
+                    timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                    entityConstraint = [{
+                    wid = null; 
                     gid = "item"; 
-                    eid = "item_b"; 
+                    eid = "item_a"; 
                     fieldName = "quantity";
                     validation = #greaterThanEqualToNumber 1.0;
                 }];
+                    nftConstraint = [];
+                    icpConstraint = null;
+                    icrcConstraint = [];
+                };
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; gid = "item"; eid = "item_a"; updateType = #decrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                            ]
+                        },
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; gid = "item"; eid = "item_c"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                            ]
+                        }
+                    ]
+                };
             };
-            actionResult = { 
-                outcomes = [
-                    {//Substract
-                        possibleOutcomes = [
-                            { option = #decrementNumber { wid = null; gid = "item"; eid = "item_b"; field = "quantity"; value =  1.0;};  weight = 100;},
-                        ]
-                    },
-                    {//Add
-                        possibleOutcomes = [
-                            { option = #incrementNumber { wid = null; gid = "item"; eid = "item_c"; field = "quantity"; value =  1.0;};  weight = 100;},
-                        ]
-                    }
-                ]
+            targetAction = null;
+        },
+//     //Increment a collective score in world
+        { 
+            aid = "increment_collective_score";
+            name = null;
+            description = null;
+            imageUrl = null;
+            tag = null;
+            callerAction = null;
+            targetAction = ? {
+                actionConstraint = null;
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; gid = "general"; eid = "collective_score"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                            ]
+                        }
+                    ]
+                };
+            };
+        },
+//     //Increment leaderboard score
+        { 
+            aid = "increment_leaderboard_example";
+            name = null;
+            description = null;
+            imageUrl = null;
+            tag = null;
+            callerAction = null;
+            targetAction = ? {
+                actionConstraint = null;
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; gid = "leaderboard_example"; eid = "$caller"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                            ]
+                        }
+                    ]
+                };
             };
         },
     ];
