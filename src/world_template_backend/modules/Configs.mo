@@ -22,183 +22,253 @@ module{
     public type Actions = [ActionTypes.Action]; 
 
     public let Nft_Canister = "6uvic-diaaa-aaaap-abgca-cai"; //Game Collection
-    public let ICRC1_Ledger = "qsnar-gqaaa-aaaam-abxnq-cai"; //Game Token
+    public let ICRC1_Ledger = "tvmv4-uqaaa-aaaap-abt5q-cai"; //Game Token
     
     public let configs : StableConfigs = [
-            //Tokens
+        //SHOP ACTIONS CONFIGS
+            {
+                cid = "shop_window_actions";
+                fields = [
+                    { fieldName = "buyItemA_Icp"; fieldValue = "verifyICP" },
+                    { fieldName = "buyItemB_Icrc"; fieldValue = "verifyICRC" },
+                    { fieldName = "buyItemC_ItemB"; fieldValue = "trade" },
+                    { fieldName = "spend_icp_to_mint_test_nft"; fieldValue = "verifyICP" },
+                    { fieldName = "burn_nft_tiket"; fieldValue = "verifyNftBurn" },
+                    { fieldName = "nft_holding_verification"; fieldValue = "verifyNftHold" },
+                ];
+            },
+            {
+                cid = "buyItemA_Icp";
+                fields = [
+                    { fieldName = "name"; fieldValue = "ItemA Offer!" },
+                    { fieldName = "description"; fieldValue = "Spend 0.001 ICP to receive an ItemA" },
+                    { fieldName = "imageUrl"; fieldValue = "https://i.postimg.cc/65smkh6B/BoomDao.jpg" },
+                ]; 
+            },
+            {
+                cid = "buyItemB_Icrc";
+                fields = [
+                    { fieldName = "name"; fieldValue = "ItemB Offer!" },
+                    { fieldName = "description"; fieldValue = "Spend 1 Test Token to receive an ItemB" },
+                    { fieldName = "imageUrl"; fieldValue = "https://i.postimg.cc/65smkh6B/BoomDao.jpg" },
+                ]; 
+            },
+            {
+                cid = "buyItemC_ItemB";
+                fields = [
+                    { fieldName = "name"; fieldValue = "Trading" },
+                    { fieldName = "description"; fieldValue = "Trade an in-game ItemB for an ItemC" },
+                    { fieldName = "imageUrl"; fieldValue = "https://i.postimg.cc/65smkh6B/BoomDao.jpg" },
+                ]; 
+            },
+            {
+                cid = "spend_icp_to_mint_test_nft";
+                fields = [
+                    { fieldName = "name"; fieldValue = "Buy a Test NFT!" },
+                    { fieldName = "description"; fieldValue = "Spend 0.001 ICP to get a \"Test NFT\"" },
+                    { fieldName = "imageUrl"; fieldValue = "https://i.postimg.cc/65smkh6B/BoomDao.jpg" },
+                ]; 
+            },
+            {
+                cid = "burn_nft_tiket";
+                fields = [
+                    { fieldName = "name"; fieldValue = "Burn a Test NFT!" },
+                    { fieldName = "description"; fieldValue = "Burn a Test NFT to get a random reward in return!" },
+                    { fieldName = "imageUrl"; fieldValue = "https://i.postimg.cc/65smkh6B/BoomDao.jpg" },
+                ]; 
+            },
+            {
+                cid = "nft_holding_verification";
+                fields = [
+                    { fieldName = "name"; fieldValue = "TEST NFT HOLDING REWARD" },
+                    { fieldName = "description"; fieldValue = "Get a reward for holding an nft of TEST NFT collection" },
+                    { fieldName = "imageUrl"; fieldValue = "https://i.postimg.cc/65smkh6B/BoomDao.jpg" },
+                ]; 
+            },
+        //Stats
+            {
+                cid = "spaceshipBaseStats";
+                fields = [
+                    { fieldName = "shield"; fieldValue = "10" },
+                    { fieldName = "damage"; fieldValue = "3" },
+                ]; 
+            },
+            {
+                cid = "spaceshipTemplate";
+                fields = [
+                    { fieldName = "hull"; fieldValue = "5" },
+                    { fieldName = "damageMul"; fieldValue = "1" },
+                    { fieldName = "shieldMul"; fieldValue = "1" },
+                ];
+            },
+            {
+                cid = "spaceshipFormulas";
+                fields = [
+                    { fieldName = "@callerTotalDamage"; fieldValue = "{$config.spaceshipBaseStats.damage} * {$caller.spaceships.spaceshipA.damageMul}" },
+                    { fieldName = "@targetTotalShield"; fieldValue = "{$config.spaceshipBaseStats.shield} * {$target.spaceships.spaceshipA.shieldMul}" },
+                    { fieldName = "@newTargetHull"; fieldValue = "{$target.spaceships.spaceshipA.hull} - ({$config.spaceshipFormulas.@callerTotalDamage} - {$config.spaceshipFormulas.@targetTotalShield})>0" },
+                    { fieldName = "@testFormula"; fieldValue = "(5 - (1 - 10))" },
+                ]
+            },
+        //Tokens
             {
                 cid = "icp_details";
                 fields = [
-                            ("tag", "token"),
-                            ("canister", "ryjl3-tyaaa-aaaaa-aaaba-cai"),
-                            ("name", "ICP"),
-                            ("description", "This is the base Internet Computer Token"),
-                            ("urlLogo", "https://cryptologos.cc/logos/internet-computer-icp-logo.png?v=026"),
+                            { fieldName = "tag"; fieldValue = "token" },
+                            { fieldName = "canister"; fieldValue = "ryjl3-tyaaa-aaaaa-aaaba-cai" },
+                            { fieldName = "name"; fieldValue = "ICP" },
+                            { fieldName = "description"; fieldValue = "This is the base Internet Computer Token" },
+                            { fieldName = "urlLogo"; fieldValue = "https://cryptologos.cc/logos/internet-computer-icp-logo.png?v=026" },
                         ];
             },
             {
                 cid = "test_token_details";
                 fields = [
-                            ("tag", "token"),
-                            ("canister", ICRC1_Ledger),
-                            ("name", "Test Token"),
-                            ("description", "just an Test Token"),
-                            ("urlLogo", "https://cryptologos.cc/logos/dogecoin-doge-logo.png?v=026"),
+                            { fieldName = "tag"; fieldValue = "token" },
+                            { fieldName = "canister"; fieldValue = ICRC1_Ledger },
+                            { fieldName = "name"; fieldValue = "Test Token" },
+                            { fieldName = "description"; fieldValue = "just an Test Token" },
+                            { fieldName = "urlLogo"; fieldValue = "https://cryptologos.cc/logos/dogecoin-doge-logo.png?v=026" },
                         ];
             },
-            //Nfts
+        //Nfts
             {
                 cid = "the_moon_walker_details";
                 fields = [
-                            ("tag", "nft"),
-                            ("canister", "er7d4-6iaaa-aaaaj-qac2q-cai"),
-                            ("isStandard", "true"),
-                            ("name", "The Moonwalkers"),
-                            ("description", "Dope Characters"),
-                            ("urlLogo", "https://i.postimg.cc/hvyLyfwh/The-Moon-Walker-Logo.png"),
+                            { fieldName = "tag"; fieldValue = "nft" },
+                            { fieldName = "canister"; fieldValue = "er7d4-6iaaa-aaaaj-qac2q-cai" },
+                            { fieldName = "isStandard"; fieldValue = "true" },
+                            { fieldName = "name"; fieldValue = "The Moonwalkers" },
+                            { fieldName = "description"; fieldValue = "Dope Characters" },
+                            { fieldName = "urlLogo"; fieldValue = "https://i.postimg.cc/hvyLyfwh/The-Moon-Walker-Logo.png" },
                         ];
             },
             {
                 cid = "poked_bots_details";
                 fields = [
-                            ("tag", "nft"),
-                            ("canister","er7d4-6iaaa-aaaaj-qac2q-cai"),
-                            ("isStandard", "true"),
-                            ("name", "Poked Bots"),
-                            ("description", "Dope Characters"),
-                            ("urlLogo", "https://i.postimg.cc/d1Qn5P1H/image.png"),
+                            { fieldName = "tag"; fieldValue = "nft" },
+                            { fieldName = "canister"; fieldValue ="bzsui-sqaaa-aaaah-qce2a-cai" },
+                            { fieldName = "isStandard"; fieldValue = "true" },
+                            { fieldName = "name"; fieldValue = "Poked Bots" },
+                            { fieldName = "description"; fieldValue = "Dope Characters" },
+                            { fieldName = "urlLogo"; fieldValue = "https://i.postimg.cc/d1Qn5P1H/image.png" },
                         ];
             },
             {
                 cid = "test_nft_collection_details";
                 fields = [
-                            ("tag", "nft"),
-                            ("canister", Nft_Canister),
-                            ("isStandard", "false"),
-                            ("name", "Test Nft Collection"),
-                            ("description", "This is a test collection"),
-                            ("urlLogo", "https://i.postimg.cc/65smkh6B/BoomDao.jpg"),
+                            { fieldName = "tag"; fieldValue = "nft" },
+                            { fieldName = "canister"; fieldValue = Nft_Canister },
+                            { fieldName = "isStandard"; fieldValue = "false" },
+                            { fieldName = "name"; fieldValue = "Test Nft Collection" },
+                            { fieldName = "description"; fieldValue = "This is a test collection" },
+                            { fieldName = "urlLogo"; fieldValue = "https://i.postimg.cc/65smkh6B/BoomDao.jpg" },
                         ];
             },
-            //Items   
+        //Items   
             {
                 cid = "character_a";
                 fields = [
-                            ("name", "CharacterA"),
-                            ("description", "just an item"),
-                            ("rarity", "common"),
+                            { fieldName = "name"; fieldValue = "CharacterA" },
+                            { fieldName = "description"; fieldValue = "just an item" },
+                            { fieldName = "rarity"; fieldValue = "common" },
                         ];
             },
             {
                 cid = "character_b";
                 fields = [
-                            ("name", "CharacterB"),
-                            ("description", "just an item"),
-                            ("rarity", "common"),
+                            { fieldName = "name"; fieldValue = "CharacterB" },
+                            { fieldName = "description"; fieldValue = "just an item" },
+                            { fieldName = "rarity"; fieldValue = "common" },
                         ];
             },   
             {
                 cid = "character_c";
                 fields = [
-                            ("name", "CharacterC"),
-                            ("description", "just an item"),
-                            ("rarity", "common"),
+                            { fieldName = "name"; fieldValue = "CharacterC" },
+                            { fieldName = "description"; fieldValue = "just an item" },
+                            { fieldName = "rarity"; fieldValue = "common" },
                         ];
             },   
             {
                 cid = "character_d";
                 fields = [
-                            ("name", "CharacterD"),
-                            ("description", "just an item"),
-                            ("rarity", "common"),
+                            { fieldName = "name"; fieldValue = "CharacterD" },
+                            { fieldName = "description"; fieldValue = "just an item" },
+                            { fieldName = "rarity"; fieldValue = "common" },
                         ];
             },
             {
                 cid = "character_e";
                 fields = [
-                            ("name", "CharacterE"),
-                            ("description", "just an item"),
-                            ("rarity", "common"),
+                            { fieldName = "name"; fieldValue = "CharacterE" },
+                            { fieldName = "description"; fieldValue = "just an item" },
+                            { fieldName = "rarity"; fieldValue = "common" },
                         ];
             },
             {
                 cid = "character_f";
                 fields = [
-                            ("name", "CharacterF"),
-                            ("description", "just an item"),
-                            ("rarity", "rare"),
+                            { fieldName = "name"; fieldValue = "CharacterF" },
+                            { fieldName = "description"; fieldValue = "just an item" },
+                            { fieldName = "rarity"; fieldValue = "rare" },
                         ];
             },
             {
                 cid = "character_g";
                 fields = [
-                            ("name", "CharacterG"),
-                            ("description", "just an item"),
-                            ("rarity", "rare"),
+                            { fieldName = "name"; fieldValue = "CharacterG" },
+                            { fieldName = "description"; fieldValue = "just an item" },
+                            { fieldName = "rarity"; fieldValue = "rare" },
                         ];
             },
             {
                 cid = "character_h";
                 fields = [
-                            ("name", "CharacterH"),
-                            ("description", "just an item"),
-                            ("rarity", "special"),
+                            { fieldName = "name"; fieldValue = "CharacterH" },
+                            { fieldName = "description"; fieldValue = "just an item" },
+                            { fieldName = "rarity"; fieldValue = "special" },
                         ];
             },
             {
                 cid = "character_h";
                 fields = [
-                            ("name", "CharacterH"),
-                            ("description", "just an item"),
-                            ("rarity", "special"),
+                            { fieldName = "name"; fieldValue = "CharacterH" },
+                            { fieldName = "description"; fieldValue = "just an item" },
+                            { fieldName = "rarity"; fieldValue = "special" },
                         ];
             },
             //
             {
                 cid = "item_a";
                 fields = [
-                            ("name", "ItemA"),
-                            ("description", "just an item"),
-                            ("rarity", "common"),
+                            { fieldName = "name"; fieldValue = "ItemA" },
+                            { fieldName = "description"; fieldValue = "just an item" },
+                            { fieldName = "rarity"; fieldValue = "common" },
                         ];
             },
             {
                 cid = "item_b";
                 fields = [
-                            ("name", "ItemB"),
-                            ("description", "just an item"),
-                            ("rarity", "common"),
+                            { fieldName = "name"; fieldValue = "ItemB" },
+                            { fieldName = "description"; fieldValue = "just an item" },
+                            { fieldName = "rarity"; fieldValue = "common" },
                         ];
             },
             {
                 cid = "item_c";
                 fields = [
-                            ("name", "ItemC"),
-                            ("description", "just an item"),
-                            ("rarity", "common"),
+                            { fieldName = "name"; fieldValue = "ItemC" },
+                            { fieldName = "description"; fieldValue = "just an item" },
+                            { fieldName = "rarity"; fieldValue = "common" },
                         ];
             },
-            //Others
-            {
-                cid = "shop_window_actions";
-                fields = [
-                            ("buyItemA_Icp", "verifyICP"),
-                            ("buyItemB_Icrc", "verifyICRC"),
-                            ("buyItemC_ItemB", "trade"),
-                            ("spend_icp_to_mint_test_nft", "verifyICP"),
-                            ("burn_nft_tiket", "verifyNftBurn"),
-                            ("nft_holding_verification", "verifyNftHold"),
-                        ];
-            },
+        //Others
     ];
     public let action : Actions = [
     //     //BURN NFT
         { 
             aid = "burn_nft_tiket";
-            name = ?"Burn a Test NFT!";
-            description = ?"Burn a Test NFT to get a random reward in return!";
-            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
-            tag = ?"BurnNft";
             callerAction = ? {
                 actionConstraint = ? {
                     timeConstraint = null;
@@ -217,24 +287,21 @@ module{
                     outcomes = [
                         {
                             possibleOutcomes = [
-                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_a"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
-                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_b"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
-                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_c"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
-                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_d"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "character_a"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "item"; }]; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "character_b"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "item"; }]; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "character_c"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "item"; }]; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "character_d"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "item"; }]; };  weight = 100;},
                             ]
                         }
                     ]
                 };
             };
             targetAction = null;
+            worldAction = null;
         },
-    //     //BURN NFT
+    //     //HOLD NFT
         { 
             aid = "nft_holding_verification";
-            name = ?"TEST NFT HOLDING REWARD";
-            description = ?"Get a reward for holding an nft of TEST NFT collection";
-            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
-            tag = ?"HoldNft";
             callerAction = ? {
                 actionConstraint = ? {
                     timeConstraint = null;
@@ -253,27 +320,24 @@ module{
                     outcomes = [
                         {
                             possibleOutcomes = [
-                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_e"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
-                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_f"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
-                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_g"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
-                                { option = #updateEntity { wid = null; gid = "item"; eid = "character_h"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "character_e"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "item"; }]; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "character_f"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "item"; }]; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "character_g"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "item"; }]; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "character_h"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "item"; }]; };  weight = 100;},
                             ]
                         }
                     ]
                 };
             };
             targetAction = null;
+            worldAction = null;
         },
     //     //SPEND ICP TO MINT NFT 
         { 
             aid = "spend_icp_to_mint_test_nft";
-            name = ?"Buy a Test NFT!";
-            description = ?"Spend 0.001 ICP to get a \"Test NFT\" ";
-            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
-            tag = ?"Mint";
             callerAction = ? {
                 actionConstraint = ? {
-                    timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                    timeConstraint = ? { actionTimeInterval = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; };
                     entityConstraint = [];
                     nftConstraint = [];
                     icpConstraint = ? {
@@ -287,7 +351,6 @@ module{
                             possibleOutcomes = [
                                 { 
                                     option = #mintNft {
-                                    index = null;
                                     name = "Test Nft";
                                     description = "Spend 0.001 ICP to purchase a Test NFT."; 
                                     imageUrl = ""; 
@@ -303,17 +366,14 @@ module{
                 };
             };
             targetAction = null;
+            worldAction = null;
         },
     //     //Mint Free Test NFTs
         { 
             aid = "mint_test_nft";
-            name = ?"Mint a free Test NFT!";
-            description = ?"Mint Two Free Test NFT";
-            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
-            tag = null;
             callerAction = ? {
                 actionConstraint = ? {
-                    timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                    timeConstraint = ? { actionTimeInterval = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; };
                     entityConstraint = [];
                     nftConstraint = [];
                     icpConstraint = null;
@@ -324,7 +384,6 @@ module{
                         {
                             possibleOutcomes = [
                                 { option = #mintNft {
-                                    index = null;
                                     name = "Test Nft";
                                     description = "Mint a free Test Nft."; 
                                     imageUrl = ""; 
@@ -340,17 +399,14 @@ module{
                 };
             };
             targetAction = null;
+            worldAction = null;
         },
     //     //Mint 5 Free Test ICRC
         { 
             aid = "mint_test_icrc";
-            name = ?"Test ICRC";
-            description = ?"Mint 5 Free Test Token";
-            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
-            tag = null;
             callerAction = ? {
                 actionConstraint = ? {
-                    timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                    timeConstraint = ? { actionTimeInterval = ? {  intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; };
                     entityConstraint = [];
                     nftConstraint = [];
                     icpConstraint = null;
@@ -372,17 +428,14 @@ module{
                 };
             };
             targetAction = null;
+            worldAction = null;
         },
     //     //BUY ItemA WITH ICP
         { 
             aid = "buyItemA_Icp";
-            name = ?"ItemA Offer!";
-            description = ?"Spend 0.001 ICP to receive an ItemA";
-            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
-            tag = ?"Offer";
             callerAction = ? {
                 actionConstraint = ? {
-                    timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                    timeConstraint = ? { actionTimeInterval = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null;};
                     entityConstraint = [];
                     nftConstraint = [];
                     icpConstraint = ? {
@@ -394,24 +447,22 @@ module{
                     outcomes = [
                         {
                             possibleOutcomes = [
-                                { option = #updateEntity { wid = null; gid = "item"; eid = "item_a"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "item_a"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "item"; }]; };  weight = 100;},
                             ]
                         }
                     ]
                 };
             };
             targetAction = null;
+            worldAction = null;
         },
     //     //BUY ItemB WITH ICRC
         { 
             aid = "buyItemB_Icrc";
-            name = ?"ItemB Offer!";
-            description = ?"Spend 1 Test Token to receive an ItemB";
-            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
-            tag = ?"Offer";
+            adminPrincipalIds = [];
             callerAction = ? {
                 actionConstraint = ? {
-                    timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                    timeConstraint = ? { actionTimeInterval = ? {  intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null;};
                     entityConstraint = [];
                     nftConstraint = [];
                     icpConstraint = null;
@@ -425,30 +476,25 @@ module{
                     outcomes = [
                         {
                             possibleOutcomes = [
-                                { option = #updateEntity { wid = null; gid = "item"; eid = "item_b"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null;  eid = "item_b"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "item"; } ]; };  weight = 100;},
                             ]
                         }
                     ]
                 };
             };
             targetAction = null;
+            worldAction = null;
         },
     //     //TRADE ItemC WITH ItemA
         { 
             aid = "buyItemC_ItemB";
-            name = ?"Trading";
-            description = ?"Trade an in-game ItemA for an ItemC";
-            imageUrl = ?"https://i.postimg.cc/65smkh6B/BoomDao.jpg";
-            tag = ?"Offer";
             callerAction = ? {
                 actionConstraint = ? {
-                    timeConstraint = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; };
+                    timeConstraint = ? { actionTimeInterval = ? {  intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null;};
                     entityConstraint = [{
                     wid = null; 
-                    gid = "item"; 
-                    eid = "item_a"; 
-                    fieldName = "quantity";
-                    validation = #greaterThanEqualToNumber 1.0;
+                    eid = "item_b"; 
+                    entityConstraintType = #greaterThanEqualToNumber {fieldName = "quantity"; value = 1.0};
                 }];
                     nftConstraint = [];
                     icpConstraint = null;
@@ -458,47 +504,146 @@ module{
                     outcomes = [
                         {
                             possibleOutcomes = [
-                                { option = #updateEntity { wid = null; gid = "item"; eid = "item_a"; updateType = #decrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "item_b"; updates = [#decrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }]; };  weight = 100;},
                             ]
                         },
                         {
                             possibleOutcomes = [
-                                { option = #updateEntity { wid = null; gid = "item"; eid = "item_c"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "item_c"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "item"; }]; };  weight = 100;},
                             ]
                         }
                     ]
                 };
             };
             targetAction = null;
+            worldAction = null;
         },
-//     //Increment a collective score in world
+    //  //Increment a collective score in world
         { 
             aid = "increment_collective_score";
-            name = null;
-            description = null;
-            imageUrl = null;
-            tag = null;
             callerAction = null;
-            targetAction = ? {
+            targetAction = null;
+            worldAction = ? {
                 actionConstraint = null;
                 actionResult = {
                     outcomes = [
                         {
                             possibleOutcomes = [
-                                { option = #updateEntity { wid = null; gid = "general"; eid = "collective_score"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "collective_score"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }]; };  weight = 100;},
                             ]
                         }
                     ]
                 };
             };
         },
-//     //Increment leaderboard score
+    //  //Increment a local score=
+        { 
+            aid = "increment_local_score";
+            callerAction = ? {
+                actionConstraint = null;
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = "local_score"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }]; };  weight = 100;},
+                            ]
+                        }
+                    ]
+                };
+            };
+            targetAction = null;
+            worldAction = null;
+        },
+    //     //Increment leaderboard score
         { 
             aid = "increment_leaderboard_example";
-            name = null;
-            description = null;
-            imageUrl = null;
-            tag = null;
+            callerAction = null;
+            targetAction = null;
+            worldAction = ? {
+                actionConstraint = null;
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = "$caller"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "test_leaderboard"; }]; };  weight = 100;},
+                            ]
+                        }
+                    ]
+                };
+            };
+        },
+    //     //Increment DamageMul
+        { 
+            aid = "incrementShipADamageMul";
+            callerAction = ? {
+                actionConstraint = null;
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = "spaceshipA"; updates = [#incrementNumber { fieldName = "damageMul"; fieldValue =  #formula "{$config.spaceshipTemplate.damageMul}"; }]; };  weight = 100;},
+                            ]
+                        },
+                    ]
+                };
+            };
+            targetAction = null;
+            worldAction = null;
+        },
+    //     //Increment DamageMul
+        { 
+            aid = "incrementShipAShieldMul";
+            callerAction = ? {
+                actionConstraint = null;
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = "spaceshipA"; updates = [#incrementNumber { fieldName = "shieldMul"; fieldValue =  #formula "{$config.spaceshipTemplate.shieldMul}"; }]; };  weight = 100;},
+                            ]
+                        },
+                    ]
+                };
+            };
+            targetAction = null;
+            worldAction = null;
+        },
+    //     //SETUP SPACESHIP
+        { 
+            aid = "setupShipA";
+            callerAction = ? {
+                actionConstraint = null;
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = "spaceshipA"; updates = [#setNumber { fieldName = "hull"; fieldValue =  #formula "{$config.spaceshipTemplate.hull}"; }]; };  weight = 100;},
+                            ]
+                        },
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = "spaceshipA"; updates = [#setNumber { fieldName = "shieldMul"; fieldValue =  #formula "{$config.spaceshipTemplate.shieldMul}"; }]; };  weight = 100;},
+                            ]
+                        },
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = "spaceshipA"; updates = [#setNumber { fieldName = "damageMul"; fieldValue =  #formula "{$config.spaceshipTemplate.damageMul}"; }]; };  weight = 100;},
+                            ]
+                        },
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = "spaceshipA"; updates = [#setNumber { fieldName = "testFormulaA"; fieldValue =  #formula "(2+3)*5"; }]; };  weight = 100;},
+                            ]
+                        }
+                    ]
+                };
+            };
+            targetAction = null;
+            worldAction = null;
+        },
+    //     //Attack Target
+        { 
+            aid = "attackTargetShipA";
             callerAction = null;
             targetAction = ? {
                 actionConstraint = null;
@@ -506,10 +651,180 @@ module{
                     outcomes = [
                         {
                             possibleOutcomes = [
-                                { option = #updateEntity { wid = null; gid = "leaderboard_example"; eid = "$caller"; updateType = #incrementNumber { field = "quantity"; value =  #number 1; }; };  weight = 100;},
+                                { option = #updateEntity { wid = null; eid = "spaceshipA"; updates = [#setNumber { fieldName = "hull"; fieldValue =  #formula "{$config.spaceshipFormulas.@newTargetHull}"; }]; };  weight = 100;},
+                            ]
+                        },
+                    ]
+                };
+            };
+            worldAction = null;
+        },
+    //     //Create Room
+        { 
+            aid = "TestCreateRoom";
+            callerAction = null;
+            targetAction = null;
+            worldAction = ? {
+                actionConstraint = null;
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = "#room_test"; updates = [
+                                    #renewTimestamp { fieldName = "sessionCreationTime"; fieldValue =  #number 0; },
+                                    #setNumber { fieldName = "userCount"; fieldValue =  #number 1; },
+                                    #addToList { fieldName = "users"; value =  "$caller"; },
+                                    #setText { fieldName = "tag"; fieldValue = "room"; }
+                                ]; };  weight = 100;},
+                            ]
+                        },
+                    ]
+                };
+            };
+        },
+    //     //Join Room
+        { 
+            aid = "TestJoinRoom";
+            callerAction = null;
+            targetAction = null;
+            worldAction = ? {
+                actionConstraint = ? {
+                    timeConstraint = null;
+                    entityConstraint = [
+                    {
+                        wid = null; 
+                        eid = "$args.roomId"; 
+                        entityConstraintType = #containsText { fieldName = "users"; value = "$caller"; contains = false; };
+                    },
+                    {
+                        wid = null; 
+                        eid = "$args.roomId"; 
+                        entityConstraintType = #lessThanNumber { fieldName = "userCount"; value = 2.0;};
+                    }];
+                    nftConstraint = [];
+                    icpConstraint = null;
+                    icrcConstraint = [];
+                };
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = "$args.roomId"; updates = [
+                                    #incrementNumber { fieldName = "userCount"; fieldValue =  #number 1; }, 
+                                    #addToList { fieldName = "users"; value =  "$caller"; }
+                                ]; };  weight = 100;},
+                            ]
+                        },
+                    ]
+                };
+            };
+        },
+    //     //Leave Room
+        { 
+            aid = "TestLeaveRoom";
+            callerAction = null;
+            targetAction = null;
+            worldAction = ? {
+                actionConstraint = ? {
+                    timeConstraint = null;
+                    entityConstraint = [
+                    {
+                        wid = null; 
+                        eid = "$args.roomId"; 
+                        entityConstraintType = #containsText { fieldName = "users"; value = "$caller"; contains = true; };
+                    },
+                    {
+                        wid = null; 
+                        eid = "$args.roomId"; 
+                        entityConstraintType = #greaterThanNumber { fieldName = "userCount"; value = 0.0 };
+                    }];
+                    nftConstraint = [];
+                    icpConstraint = null;
+                    icrcConstraint = [];
+                };
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = "$args.roomId"; updates = [
+                                    #decrementNumber { fieldName = "userCount"; fieldValue =  #number 1; }, 
+                                    #removeFromList { fieldName = "users"; value =  "$caller"; }
+                                ]; };  weight = 100;},
+                            ]
+                        },
+                    ]
+                };
+            };
+        },
+//     //Multiplayer Action
+        { 
+            aid = "TestMultiplayerAction_GiftToken";
+            callerAction = null;
+            targetAction = ? {
+                actionConstraint = null;
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { 
+                                    option = #transferIcrc {
+                                        quantity = 5;
+                                        canister = ICRC1_Ledger;
+                                    };  weight = 100;
+                                },
                             ]
                         }
                     ]
+                };
+            };
+            worldAction = ? {
+                actionConstraint = ? {
+                    timeConstraint = null;
+                    entityConstraint = [
+                    {
+                        wid = null; 
+                        eid = "$args.roomId"; 
+                        entityConstraintType = #containsText { fieldName = "users"; value = "$caller"; contains = true; };
+                    }];
+                    nftConstraint = [];
+                    icpConstraint = null;
+                    icrcConstraint = [];
+                };
+                actionResult = {
+                    outcomes = [];
+                };
+            };
+        },
+        { 
+            aid = "TestMultiplayerAction_GiftItemB";
+            callerAction = null;
+            targetAction = ? {
+                actionConstraint = null;
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null;  eid = "item_b"; updates = [#incrementNumber { fieldName = "quantity"; fieldValue =  #number 1; }, #setText { fieldName = "tag"; fieldValue = "item"; } ]; };  weight = 100;},
+                            ]
+                        }
+                    ]
+                };
+            };
+            worldAction = ? {
+                actionConstraint = ? {
+                    timeConstraint = null;
+                    entityConstraint = [
+                    {
+                        wid = null; 
+                        eid = "$args.roomId"; 
+                        entityConstraintType = #containsText { fieldName = "users"; value = "$caller"; contains = true; };
+                    }];
+                    nftConstraint = [];
+                    icpConstraint = null;
+                    icrcConstraint = [];
+                };
+                actionResult = {
+                    outcomes = [];
                 };
             };
         },

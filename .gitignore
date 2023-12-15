@@ -19,3 +19,5 @@ dist/
 
 # csharp files
 csharp/
+
+.mops

@@ -29,7 +29,7 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 import Map "../utils/Map";
 
-import TGlobal "./global.types";
+import TGlobal "./v1.global.types";
 
 module {
 
