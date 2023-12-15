@@ -54,6 +54,8 @@ import FormulaEvaluation "../modules/FormulaEvaluation";
 
 import TConstraints "../types/constraints.types";
 import IcWebSocketCdk "mo:ic-websocket-cdk";
+import IcWebSocketCdkState "mo:ic-websocket-cdk/State";
+import IcWebSocketCdkTypes "mo:ic-websocket-cdk/Types";
 
 import V1TGlobal "../migrations/v1.global.types";
 import V1TEntity "../migrations/v1.entity.types";
@@ -2234,7 +2236,7 @@ actor class WorldTemplate() = this {
 
         //GET WORLD IDS TO FETCH ENTITIES FROM
         var worldEntityConstraintsWorldIds : [Text] = [];
-        
+
         switch (worldActionConstraint) {
             case(? constraints){
 
@@ -2251,7 +2253,7 @@ actor class WorldTemplate() = this {
         };
 
         var callerEntityConstraintsWorldIds : [Text] = [];
-        
+
         switch (callerActionConstraint) {
             case(? constraints){
 
@@ -2268,7 +2270,7 @@ actor class WorldTemplate() = this {
         };
 
         var targetEntityConstraintsWorldIds : [Text] = [];
-        
+
         switch (targetActionConstraint) {
             case(? constraints){
 
@@ -2600,7 +2602,7 @@ actor class WorldTemplate() = this {
 
         //GET WORLD IDS TO FETCH ENTITIES FROM
         var worldEntityConstraintsWorldIds : [Text] = [];
-        
+
         switch (worldActionConstraint) {
             case(? constraints){
 
@@ -2617,7 +2619,7 @@ actor class WorldTemplate() = this {
         };
 
         var sourceEntityConstraintsWorldIds : [Text] = [];
-        
+
         switch (sourceActionConstraint) {
             case(? constraints){
 
@@ -3353,15 +3355,6 @@ actor class WorldTemplate() = this {
     };
     //# Websocket
 
-    let gateway_principal : Text = "3656s-3kqlj-dkm5d-oputg-ymybu-4gnuq-7aojd-w2fzw-5lfp2-4zhx3-4ae";
-
-    var ws_state = IcWebSocketCdk.IcWebSocketState([gateway_principal]);
-
-    public type WSSentArg = {
-        #actionOutcomes : TAction.ActionReturn;
-        #userIdsToFetchDataFrom : [Text];
-    };
-
     /// A custom function to send the message to the client
     func send_app_message(client_principal : IcWebSocketCdk.ClientPrincipal, msg : WSSentArg) : async () {
         // here we call the ws_send from the CDK!!
@@ -3468,20 +3461,26 @@ actor class WorldTemplate() = this {
         };
     };
 
-    let handlers = IcWebSocketCdk.WsHandlers(
+    let params = IcWebSocketCdkTypes.WsInitParams(
+        null,
+        null,
+        null,
+    );
+
+    let ws_state = IcWebSocketCdkState.IcWebSocketState(params);
+
+    let handlers = IcWebSocketCdkTypes.WsHandlers(
         ?on_open,
         ?on_message,
         ?on_close,
     );
 
-    let params = IcWebSocketCdk.WsInitParams(
-        handlers,
-        null,
-        null,
-        null,
-    );
+    var ws = IcWebSocketCdk.IcWebSocket(ws_state, params, handlers);
 
-    var ws = IcWebSocketCdk.IcWebSocket(ws_state, params);
+    public type WSSentArg = {
+        #actionOutcomes : TAction.ActionReturn;
+        #userIdsToFetchDataFrom : [Text];
+    };
 
     // method called by the WS Gateway after receiving FirstMessage from the client
     public shared ({ caller }) func ws_open(args : IcWebSocketCdk.CanisterWsOpenArguments) : async IcWebSocketCdk.CanisterWsOpenResult {

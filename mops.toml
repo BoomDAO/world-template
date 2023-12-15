@@ -1,0 +1,3 @@
+[dependencies]
+base = "0.10.2"
+ic-websocket-cdk = "0.3.1"
