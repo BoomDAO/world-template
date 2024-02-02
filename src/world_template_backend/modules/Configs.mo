@@ -112,23 +112,13 @@ module{
             },
         //Tokens
             {
-                cid = "icp_details";
-                fields = [
-                            { fieldName = "tag"; fieldValue = "token" },
-                            { fieldName = "canister"; fieldValue = "ryjl3-tyaaa-aaaaa-aaaba-cai" },
-                            { fieldName = "name"; fieldValue = "ICP" },
-                            { fieldName = "description"; fieldValue = "This is the base Internet Computer Token" },
-                            { fieldName = "urlLogo"; fieldValue = "https://cryptologos.cc/logos/internet-computer-icp-logo.png?v=026" },
-                        ];
-            },
-            {
                 cid = "test_token_details";
                 fields = [
                             { fieldName = "tag"; fieldValue = "token" },
                             { fieldName = "canister"; fieldValue = ICRC1_Ledger },
                             { fieldName = "name"; fieldValue = "Test Token" },
                             { fieldName = "description"; fieldValue = "just an Test Token" },
-                            { fieldName = "urlLogo"; fieldValue = "https://cryptologos.cc/logos/dogecoin-doge-logo.png?v=026" },
+                            { fieldName = "url_logo"; fieldValue = "https://cryptologos.cc/logos/dogecoin-doge-logo.png?v=026" },
                         ];
             },
         //Nfts
@@ -137,10 +127,10 @@ module{
                 fields = [
                             { fieldName = "tag"; fieldValue = "nft" },
                             { fieldName = "canister"; fieldValue = "er7d4-6iaaa-aaaaj-qac2q-cai" },
-                            { fieldName = "isStandard"; fieldValue = "true" },
+                            { fieldName = "is_standard"; fieldValue = "true" },
                             { fieldName = "name"; fieldValue = "The Moonwalkers" },
                             { fieldName = "description"; fieldValue = "Dope Characters" },
-                            { fieldName = "urlLogo"; fieldValue = "https://i.postimg.cc/hvyLyfwh/The-Moon-Walker-Logo.png" },
+                            { fieldName = "url_logo"; fieldValue = "https://i.postimg.cc/hvyLyfwh/The-Moon-Walker-Logo.png" },
                         ];
             },
             {
@@ -148,10 +138,10 @@ module{
                 fields = [
                             { fieldName = "tag"; fieldValue = "nft" },
                             { fieldName = "canister"; fieldValue ="bzsui-sqaaa-aaaah-qce2a-cai" },
-                            { fieldName = "isStandard"; fieldValue = "true" },
+                            { fieldName = "is_standard"; fieldValue = "true" },
                             { fieldName = "name"; fieldValue = "Poked Bots" },
                             { fieldName = "description"; fieldValue = "Dope Characters" },
-                            { fieldName = "urlLogo"; fieldValue = "https://i.postimg.cc/d1Qn5P1H/image.png" },
+                            { fieldName = "url_logo"; fieldValue = "https://i.postimg.cc/d1Qn5P1H/image.png" },
                         ];
             },
             {
@@ -159,10 +149,10 @@ module{
                 fields = [
                             { fieldName = "tag"; fieldValue = "nft" },
                             { fieldName = "canister"; fieldValue = Nft_Canister },
-                            { fieldName = "isStandard"; fieldValue = "false" },
+                            { fieldName = "is_standard"; fieldValue = "false" },
                             { fieldName = "name"; fieldValue = "Test Nft Collection" },
                             { fieldName = "description"; fieldValue = "This is a test collection" },
-                            { fieldName = "urlLogo"; fieldValue = "https://i.postimg.cc/65smkh6B/BoomDao.jpg" },
+                            { fieldName = "url_logo"; fieldValue = "https://i.postimg.cc/65smkh6B/BoomDao.jpg" },
                         ];
             },
         //Items   
@@ -280,7 +270,6 @@ module{
                             metadata = null;
                         }
                     ];
-                    icpConstraint = null;
                     icrcConstraint = [];
                 };
                 actionResult = {
@@ -313,7 +302,6 @@ module{
                             metadata = null;
                         }
                     ];
-                    icpConstraint = null;
                     icrcConstraint = [];
                 };
                 actionResult = {
@@ -340,10 +328,9 @@ module{
                     timeConstraint = ? { actionTimeInterval = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; };
                     entityConstraint = [];
                     nftConstraint = [];
-                    icpConstraint = ? {
-                            amount = 0.001; toPrincipal = "tulnw-tl2en-5kqoh-qdgf4-5y7k6-ig3on-htta2-35wv7-2u25c-yqoas-zae"
-                        };
-                    icrcConstraint = [];
+                    icrcConstraint = [{
+                            canister = ENV.IcpLedgerCanisterId; amount = 0.001; toPrincipal = "tulnw-tl2en-5kqoh-qdgf4-5y7k6-ig3on-htta2-35wv7-2u25c-yqoas-zae"
+                        }];
                 };
                 actionResult = {
                     outcomes = [
@@ -376,7 +363,6 @@ module{
                     timeConstraint = ? { actionTimeInterval = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; };
                     entityConstraint = [];
                     nftConstraint = [];
-                    icpConstraint = null;
                     icrcConstraint = [];
                 };
                 actionResult = {
@@ -409,7 +395,6 @@ module{
                     timeConstraint = ? { actionTimeInterval = ? {  intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; };
                     entityConstraint = [];
                     nftConstraint = [];
-                    icpConstraint = null;
                     icrcConstraint = [];
                 };
                 actionResult = {
@@ -438,10 +423,9 @@ module{
                     timeConstraint = ? { actionTimeInterval = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null;};
                     entityConstraint = [];
                     nftConstraint = [];
-                    icpConstraint = ? {
-                            amount = 0.001; toPrincipal = "tulnw-tl2en-5kqoh-qdgf4-5y7k6-ig3on-htta2-35wv7-2u25c-yqoas-zae"
-                        };
-                    icrcConstraint = [];
+                    icrcConstraint = [{
+                            canister = ENV.IcpLedgerCanisterId; amount = 0.001; toPrincipal = "tulnw-tl2en-5kqoh-qdgf4-5y7k6-ig3on-htta2-35wv7-2u25c-yqoas-zae"
+                        }];
                 };
                 actionResult = {
                     outcomes = [
@@ -465,7 +449,6 @@ module{
                     timeConstraint = ? { actionTimeInterval = ? {  intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null;};
                     entityConstraint = [];
                     nftConstraint = [];
-                    icpConstraint = null;
                     icrcConstraint = [
                         {
                             canister = ICRC1_Ledger; amount = 1; toPrincipal = "tulnw-tl2en-5kqoh-qdgf4-5y7k6-ig3on-htta2-35wv7-2u25c-yqoas-zae"
@@ -497,7 +480,6 @@ module{
                     entityConstraintType = #greaterThanEqualToNumber {fieldName = "quantity"; value = 1.0};
                 }];
                     nftConstraint = [];
-                    icpConstraint = null;
                     icrcConstraint = [];
                 };
                 actionResult = {
@@ -702,7 +684,6 @@ module{
                         entityConstraintType = #lessThanNumber { fieldName = "userCount"; value = 2.0;};
                     }];
                     nftConstraint = [];
-                    icpConstraint = null;
                     icrcConstraint = [];
                 };
                 actionResult = {
@@ -739,7 +720,6 @@ module{
                         entityConstraintType = #greaterThanNumber { fieldName = "userCount"; value = 0.0 };
                     }];
                     nftConstraint = [];
-                    icpConstraint = null;
                     icrcConstraint = [];
                 };
                 actionResult = {
@@ -787,7 +767,6 @@ module{
                         entityConstraintType = #containsText { fieldName = "users"; value = "$caller"; contains = true; };
                     }];
                     nftConstraint = [];
-                    icpConstraint = null;
                     icrcConstraint = [];
                 };
                 actionResult = {
@@ -820,7 +799,6 @@ module{
                         entityConstraintType = #containsText { fieldName = "users"; value = "$caller"; contains = true; };
                     }];
                     nftConstraint = [];
-                    icpConstraint = null;
                     icrcConstraint = [];
                 };
                 actionResult = {

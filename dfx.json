@@ -7,10 +7,17 @@
   },
   "defaults": {
     "build": {
-      "args": "",
-      "packtool": "mops sources"
+      "args": ""
     }
   },
+  "networks": {
+		"guilds": {
+			"providers": [
+				"https://icp0.io"
+			],
+			"type": "persistent"
+		}
+	},
   "output_env_file": ".env",
   "version": 1
 }
