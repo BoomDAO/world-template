@@ -800,7 +800,7 @@ actor class WorldTemplate(owner : Principal) = this {
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             switch (update.fieldValue) {
                                 case (#formula formula) {
@@ -819,7 +819,18 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                     continue updateTypes;
                                 };
-                                case (_) {};
+                                case (_) {
+
+                                    if(update.fieldName != _fieldName){
+                                        refinedUpdateEntityTypes.add(
+                                            #setNumber {
+                                                fieldName = _fieldName;
+                                                fieldValue = update.fieldValue;
+                                            }
+                                        );
+                                        continue updateTypes;
+                                    };
+                                };
                             };
 
                         };
@@ -828,7 +839,7 @@ actor class WorldTemplate(owner : Principal) = this {
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             switch (update.fieldValue) {
                                 case (#formula formula) {
@@ -848,7 +859,18 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                     continue updateTypes;
                                 };
-                                case (_) {};
+                                case (_) {
+
+                                    if(update.fieldName != _fieldName){
+                                        refinedUpdateEntityTypes.add(
+                                            #decrementNumber {
+                                                fieldName = _fieldName;
+                                                fieldValue = update.fieldValue;
+                                            }
+                                        );
+                                        continue updateTypes;
+                                    };
+                                };
                             };
 
                         };
@@ -857,7 +879,7 @@ actor class WorldTemplate(owner : Principal) = this {
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             switch (update.fieldValue) {
                                 case (#formula formula) {
@@ -877,7 +899,18 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                     continue updateTypes;
                                 };
-                                case (_) {};
+                                case (_) {
+
+                                    if(update.fieldName != _fieldName){
+                                        refinedUpdateEntityTypes.add(
+                                            #incrementNumber {
+                                                fieldName = _fieldName;
+                                                fieldValue = update.fieldValue;
+                                            }
+                                        );
+                                        continue updateTypes;
+                                    };
+                                };
                             };
 
                         };
@@ -886,7 +919,7 @@ actor class WorldTemplate(owner : Principal) = this {
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             switch (update.fieldValue) {
                                 case (#formula formula) {
@@ -906,7 +939,18 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                     continue updateTypes;
                                 };
-                                case (_) {};
+                                case (_) {
+
+                                    if(update.fieldName != _fieldName){
+                                        refinedUpdateEntityTypes.add(
+                                            #renewTimestamp {
+                                                fieldName = _fieldName;
+                                                fieldValue = update.fieldValue;
+                                            }
+                                        );
+                                        continue updateTypes;
+                                    };
+                                };
                             };
                         };
                         case (#setText update) {
@@ -914,7 +958,7 @@ actor class WorldTemplate(owner : Principal) = this {
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             if (Text.contains(update.fieldValue, #text "$caller")) {
 
@@ -959,14 +1003,26 @@ actor class WorldTemplate(owner : Principal) = this {
                                 } else {
                                     return #err("you need an action argument whose pattern must be #args.fieldName");
                                 };
-                            };
+                            }
+                            else{
+
+                                if(update.fieldName != _fieldName){
+                                    refinedUpdateEntityTypes.add(
+                                        #setText {
+                                            fieldName = _fieldName;
+                                            fieldValue = update.fieldValue;
+                                        }
+                                    );
+                                    continue updateTypes;
+                                };
+                            }
                         };
                         case (#addToList update) {
 
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             if (Text.contains(update.value, #text "$caller")) {
 
@@ -1012,14 +1068,26 @@ actor class WorldTemplate(owner : Principal) = this {
                                 } else {
                                     return #err("you need an action argument whose pattern must be #args.fieldName");
                                 };
-                            };
+                            }
+                            else{
+
+                                if(update.fieldName != _fieldName){
+                                    refinedUpdateEntityTypes.add(
+                                        #addToList {
+                                            fieldName = _fieldName;
+                                            value = update.value;
+                                        }
+                                    );
+                                    continue updateTypes;
+                                };
+                            }
                         };
                         case (#removeFromList update) {
 
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             if (Text.contains(update.value, #text "$caller")) {
 
@@ -1064,7 +1132,19 @@ actor class WorldTemplate(owner : Principal) = this {
                                 } else {
                                     return #err("you need an action argument whose pattern must be #args.fieldName");
                                 };
-                            };
+                            }
+                            else{
+
+                                if(update.fieldName != _fieldName){
+                                    refinedUpdateEntityTypes.add(
+                                        #removeFromList {
+                                            fieldName = _fieldName;
+                                            value = update.value;
+                                        }
+                                    );
+                                    continue updateTypes;
+                                };
+                            }
                         };
                         case _ {};
                     };
