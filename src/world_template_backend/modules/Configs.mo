@@ -325,7 +325,7 @@ module{
             aid = "spend_icp_to_mint_test_nft";
             callerAction = ? {
                 actionConstraint = ? {
-                    timeConstraint = ? { actionTimeInterval = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; };
+                    timeConstraint = ? { actionTimeInterval = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; actionHistory = []; actionStartTimestamp = null; };
                     entityConstraint = [];
                     nftConstraint = [];
                     icrcConstraint = [{
@@ -360,7 +360,7 @@ module{
             aid = "mint_test_nft";
             callerAction = ? {
                 actionConstraint = ? {
-                    timeConstraint = ? { actionTimeInterval = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; };
+                    timeConstraint = ? { actionTimeInterval = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; actionHistory = []; actionStartTimestamp = null; };
                     entityConstraint = [];
                     nftConstraint = [];
                     icrcConstraint = [];
@@ -392,7 +392,7 @@ module{
             aid = "mint_test_icrc";
             callerAction = ? {
                 actionConstraint = ? {
-                    timeConstraint = ? { actionTimeInterval = ? {  intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; };
+                    timeConstraint = ? { actionTimeInterval = ? {  intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; actionHistory = []; actionStartTimestamp = null; };
                     entityConstraint = [];
                     nftConstraint = [];
                     icrcConstraint = [];
@@ -420,7 +420,7 @@ module{
             aid = "buyItemA_Icp";
             callerAction = ? {
                 actionConstraint = ? {
-                    timeConstraint = ? { actionTimeInterval = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null;};
+                    timeConstraint = ? { actionTimeInterval = ? { intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; actionHistory = []; actionStartTimestamp = null;};
                     entityConstraint = [];
                     nftConstraint = [];
                     icrcConstraint = [{
@@ -446,7 +446,7 @@ module{
             adminPrincipalIds = [];
             callerAction = ? {
                 actionConstraint = ? {
-                    timeConstraint = ? { actionTimeInterval = ? {  intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null;};
+                    timeConstraint = ? { actionTimeInterval = ? {  intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; actionHistory = []; actionStartTimestamp = null;};
                     entityConstraint = [];
                     nftConstraint = [];
                     icrcConstraint = [
@@ -473,7 +473,7 @@ module{
             aid = "buyItemC_ItemB";
             callerAction = ? {
                 actionConstraint = ? {
-                    timeConstraint = ? { actionTimeInterval = ? {  intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null;};
+                    timeConstraint = ? { actionTimeInterval = ? {  intervalDuration = 15_000_000_000; actionsPerInterval = 1; }; actionExpirationTimestamp = null; actionHistory = []; actionStartTimestamp = null;};
                     entityConstraint = [{
                     wid = null; 
                     eid = "item_b"; 

@@ -39,5 +39,5 @@ module {
 
     public let WorldHubCanisterId = "fgpem-ziaaa-aaaag-abi2q-cai";
     public let PaymentHubCanisterId = "5hr3g-hqaaa-aaaap-abbxa-cai"; //!avoid changing this!
-    public let WorldDeployerCanisterId = "js5r2-paaaa-aaaap-abf7q-cai";
+    public let WorldDeployerCanisterId = "na2jz-uqaaa-aaaal-qbtfq-cai";
 };
