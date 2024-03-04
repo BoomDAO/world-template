@@ -30,13 +30,14 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
 module {
-    public let Ledger = "ryjl3-tyaaa-aaaaa-aaaba-cai"; //ICP Ledger canister_id
+    public let IcpLedgerCanisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai"; //ICP Ledger canister_id
 
     public let admins = [
         "26otq-bnbgp-bfbhy-i7ypc-czyxx-3rlax-yrrny-issrb-kwepg-vqtcs-pae",//JACK
         "2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe",//HITESH
-    ]; //add admin principal for access control over DB
+    ]; 
 
-    public let WorldHubCanisterId = "fgpem-ziaaa-aaaag-abi2q-cai";
+    public let WorldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai"; // Staging
     public let PaymentHubCanisterId = "5hr3g-hqaaa-aaaap-abbxa-cai"; //!avoid changing this!
+    public let WorldDeployerCanisterId = "na2jz-uqaaa-aaaal-qbtfq-cai";
 };
