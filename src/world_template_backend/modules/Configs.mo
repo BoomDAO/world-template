@@ -518,7 +518,7 @@ module{
                 };
             };
         },
-    //  //Increment a local score=
+    //  //Increment a local score
         { 
             aid = "increment_local_score";
             callerAction = ? {
