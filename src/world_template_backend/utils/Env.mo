@@ -37,7 +37,9 @@ module {
         "2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe",//HITESH
     ]; 
 
-    public let WorldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai"; // Staging
-    public let PaymentHubCanisterId = "5hr3g-hqaaa-aaaap-abbxa-cai"; //!avoid changing this!
+    // Staging 
+    public let GamingGuildCanisterId = "";
+    public let WorldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai";
     public let WorldDeployerCanisterId = "na2jz-uqaaa-aaaal-qbtfq-cai";
+    public let AnalyticsCanisterId = "imqio-gaaaa-aaaal-adlxa-cai";
 };
